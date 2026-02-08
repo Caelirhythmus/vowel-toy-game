@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vowel Change Inference Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-language"></i> Vowel Change Inference</h1>
+            <p class="subtitle">Determine if word A can change to word B based on vowel opening degrees.</p>
+        </header>
+
+        <div class="game-area">
+            <div class="settings">
+                <label for="time-select">Set Time (seconds): </label>
+                <select id="time-select">
+                    <option value="30">30</option>
+                    <option value="60" selected>60</option>
+                    <option value="90">90</option>
+                    <option value="120">120</option>
+                </select>
+                <button id="start-btn" class="btn start"><i class="fas fa-play"></i> Start Game</button>
+                <button id="reset-btn" class="btn reset"><i class="fas fa-redo"></i> Reset</button>
+            </div>
+
+            <div class="timer">
+                <span id="timer-display">60</span> seconds left
+            </div>
+
+            <div class="words">
+                <div class="word-box">
+                    <h2>Word A</h2>
+                    <div id="word-a" class="word">----</div>
+                </div>
+                <div class="arrow">
+                    <i class="fas fa-long-arrow-alt-right"></i>
+                </div>
+                <div class="word-box">
+                    <h2>Word B</h2>
+                    <div id="word-b" class="word">----</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="yes-btn" class="btn choice yes" disabled><i class="fas fa-check"></i> Can Change</button>
+                <button id="no-btn" class="btn choice no" disabled><i class="fas fa-times"></i> Cannot Change</button>
+            </div>
+
+            <div class="feedback" id="feedback">
+                Choose "Can Change" or "Cannot Change".
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">Correct:</span>
+                    <span id="correct-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Incorrect:</span>
+                    <span id="incorrect-count">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Answers:</span>
+                    <span id="total-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="rules">
+            <h3><i class="fas fa-info-circle"></i> Rules</h3>
+            <ul>
+                <li>Words are CVCV structure. Consonants (C) are from: b, p, m, d, t, n, h, g, k.</li>
+                <li>Vowels (V) are from: i, e, ɛ, æ, a (in increasing opening degree: i < e < ɛ < æ < a).</li>
+                <li>Consonants in the same position are identical in both words.</li>
+                <li>Change is possible only if for each vowel position, the opening degree of A's vowel is greater than or equal to that of B's vowel (i.e., change from larger opening to smaller opening is allowed).</li>
+                <li>If any vowel position violates this rule, the whole word cannot change.</li>
+                <li>You have limited time. Each wrong answer reduces time by 1 second.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-flag-checkered"></i> Time's Up!</h2>
+            <p>Your final statistics:</p>
+            <div class="final-stats">
+                <p>Correct Answers: <span id="final-correct">0</span></p>
+                <p>Incorrect Answers: <span id="final-incorrect">0</span></p>
+                <p>Total Attempts: <span id="final-total">0</span></p>
+            </div>
+            <button id="close-modal" class="btn close">Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
