@@ -1,0 +1,40 @@
+name: Deploy static site to Pages
+
+on:
+  # 在推送到main分支时触发工作流
+  push:
+    branches: [ "main" ]
+  # 允许您从Actions选项卡手动运行此工作流
+  workflow_dispatch:
+
+# 设置GITHUB_TOKEN的权限，以允许部署到GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 只允许一次部署运行，如果正在运行，则排队
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # 构建作业，实际上这里不需要构建，只是上传文件
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # 上传整个仓库（因为您的文件在根目录）
+          # 如果您的文件在某个子目录，比如public，则修改为：path: './public'
+          path: '.'
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
