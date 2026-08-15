@@ -18,12 +18,14 @@ function speakWord(word: Word) {
   void speechService.playWord(word);
 }
 
-/** 发音按钮悬停说明：加载失败时给出原因（便于反馈/诊断） */
-const speakTitle = computed(() =>
-  piperStatus.value === 'error' && piperError.value
-    ? `Piper 加载失败：${piperError.value}（已回退近似合成）`
-    : t('btn.speak.note')
-);
+/** 发音按钮悬停说明：加载失败给出原因；加载中说明点击为近似朗读 */
+const speakTitle = computed(() => {
+  if (piperStatus.value === 'loading') return t('btn.speak.loading.note');
+  if (piperStatus.value === 'error' && piperError.value) {
+    return `Piper 加载失败：${piperError.value}（已回退近似合成）`;
+  }
+  return t('btn.speak.note');
+});
 
 /** 发音按钮文案：加载中提示（含进度）/ 主引擎不可用时标注回退 */
 const speakLabel = computed(() => {
@@ -79,12 +81,12 @@ const speakSupported = speechService.supported();
 
     <div v-if="q && q.kind !== 'system'" class="words">
       <div class="word-box a">
-        <h3>A <button v-if="speakSupported" class="mini-btn" :disabled="piperStatus === 'loading'" :title="speakTitle" @click="speakWord(q.wordA)">{{ speakLabel }}</button></h3>
+        <h3>A <button v-if="speakSupported" class="mini-btn" :title="speakTitle" @click="speakWord(q.wordA)">{{ speakLabel }}</button></h3>
         <div class="word">{{ wordText(q.wordA) }}</div>
       </div>
       <div class="arrow">→</div>
       <div class="word-box b">
-        <h3>B <button v-if="speakSupported" class="mini-btn" :disabled="piperStatus === 'loading'" :title="speakTitle" @click="speakWord(q.wordB)">{{ speakLabel }}</button></h3>
+        <h3>B <button v-if="speakSupported" class="mini-btn" :title="speakTitle" @click="speakWord(q.wordB)">{{ speakLabel }}</button></h3>
         <div class="word">{{ wordText(q.wordB) }}</div>
       </div>
     </div>

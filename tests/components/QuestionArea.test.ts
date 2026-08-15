@@ -44,13 +44,13 @@ describe('QuestionArea 发音按钮（Piper 加载状态）', () => {
     expect(btns[0].attributes('disabled')).toBeUndefined();
   });
 
-  it('加载中：按钮显示“语音模型加载中…”且禁用', async () => {
+  it('加载中：按钮显示“语音模型加载中…”且仍可点击（点击即近似朗读）', async () => {
     const wrapper = mount(QuestionArea);
     for (const cb of listeners) cb('loading', null);
     await nextTick();
     const btns = wrapper.findAll('.mini-btn');
     expect(btns[0].text()).toBe('语音模型加载中…');
-    expect(btns[0].attributes('disabled')).toBeDefined();
+    expect(btns[0].attributes('disabled')).toBeUndefined();
   });
 
   it('加载中带进度：显示百分比', async () => {

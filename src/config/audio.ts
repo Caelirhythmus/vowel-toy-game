@@ -73,6 +73,11 @@ export const PIPER_VOICE = {
   /** 相对站点根的模型/配置路径（构建后以 document.baseURI 归一化） */
   /** 主模型为 int8 动态量化版（60MB→18MB，首次加载快 70%）；float 版保留作自动回退 */
   modelPath: 'vendor/piper/en_US-joe-medium.int8.onnx',
+  /**
+   * 外部 CDN 镜像（jsDelivr gh CDN，国内访问通常显著快于 github.io/Vercel）。
+   * 加载顺序：外部 int8（45s）→ 本地 int8（60s）→ float（仅 int8 404 时）。
+   */
+  modelUrlExternal: 'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.int8.onnx',
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 18681544,
   modelPathFloat: 'vendor/piper/en_US-joe-medium.onnx',

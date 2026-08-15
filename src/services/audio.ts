@@ -9,8 +9,8 @@
 import type { Word } from '@/core';
 import { VOWEL_AUDIO } from '@/config/audio';
 import { symbolToTtsText, wordToTtsText } from '@/core/espeak';
-import { synthWord } from './espeak';
-import { synthPiperWord, warmupPiper } from './piper';
+import { getEspeakReady, synthWord, warmupEspeak } from './espeak';
+import { getPiperStatus, synthPiperWord, warmupPiper } from './piper';
 
 export interface SpeechService {
   /** 是否有任何可用发声能力 */
@@ -76,15 +76,23 @@ export const speechService: SpeechService = {
   },
 
   async playWord(word: Word) {
-    // 主引擎：Piper（神经 TTS，显式音素输入）
-    const wav = await synthPiperWord(word);
-    if (wav && wav.length > 44 && playWavBytes(wav)) return true;
-    // 回退：espeak-ng（离线共振峰合成）
-    const wav2 = await synthWord(word);
-    if (wav2 && wav2.length > 44 && playWavBytes(wav2)) return true;
-    // 最后兜底：近似拼写（"poobee"…）；不再朗读含 ˈ/IPA 的原文（曾听成字母名）
+    // 非阻塞降级链：无论引擎是否就绪，点击必有响应
+    // 1) Piper 已就绪 → 神经合成（高质量）
+    if (getPiperStatus() === 'ready') {
+      const wav = await synthPiperWord(word);
+      if (wav && wav.length > 44 && playWavBytes(wav)) return true;
+    }
+    // 2) espeak 已加载过 → 离线共振峰合成
+    if (getEspeakReady()) {
+      const wav2 = await synthWord(word);
+      if (wav2 && wav2.length > 44 && playWavBytes(wav2)) return true;
+    }
+    // 3) 立即用浏览器 TTS 近似朗读（零等待；不再朗读含 ˈ/IPA 的原文）
     const tts = wordToTtsText(word);
     if (tts) this.speak(tts);
+    // 后台继续加载未就绪引擎，下次点击自动升级为更高质量
+    void warmupPiper();
+    warmupEspeak();
     return false;
   },
 

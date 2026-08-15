@@ -15,6 +15,12 @@ interface ESpeakModule {
 type ESpeakFactory = (opts: { arguments: string[] }) => Promise<ESpeakModule>;
 
 let factoryPromise: Promise<ESpeakFactory> | null = null;
+let factoryReady = false;
+
+/** espeak 引擎是否已加载完成（已加载时回退路径可立即使用，无需等待下载） */
+export function getEspeakReady(): boolean {
+  return factoryReady;
+}
 
 function loadFactory(): Promise<ESpeakFactory> {
   if (!factoryPromise) {
@@ -27,9 +33,20 @@ function loadFactory(): Promise<ESpeakFactory> {
       `${import.meta.env.BASE_URL}vendor/espeak-ng/espeak-ng.js`,
       document.baseURI
     ).href;
-    factoryPromise = import(/* @vite-ignore */ vendorUrl).then((m) => m.default as ESpeakFactory);
+    factoryPromise = import(/* @vite-ignore */ vendorUrl).then((m) => {
+      factoryReady = true;
+      return m.default as ESpeakFactory;
+    });
   }
   return factoryPromise;
+}
+
+/** 预加载 espeak 引擎（不合成；后台加载，下次回退可立即使用） */
+export function warmupEspeak(): void {
+  if (import.meta.env.MODE === 'test') return;
+  void loadFactory().catch(() => {
+    /* 失败静默：TTS 兜底 */
+  });
 }
 
 /** espeak 加载/合成总超时：慢网络下避免点击后长时间无声（超时即走 TTS 兜底） */
