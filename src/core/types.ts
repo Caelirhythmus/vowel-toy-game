@@ -18,6 +18,8 @@ export interface DiphthongDef {
   symbol: string;
   /** 定位用的起点单元音 symbol */
   start: string;
+  /** 标签相对起点元音的偏移（分数坐标，用于错开同起点标签） */
+  labelOffset: { dx: number; dy: number };
 }
 
 /** 词内元音（精简载体，携带长短/复元音标记） */

@@ -32,19 +32,42 @@ const P = (fx: number, fy: number) => `${px(fx)},${py(fy)}`;
 const trapezoid = `${P(0.3, 0.13)} ${P(0.7, 0.13)} ${P(0.84, 0.88)} ${P(0.16, 0.88)}`;
 const rowHeights = [4, 3, 2, 0] as const;
 
+// 轴标注（行 = 舌位高低，列 = 舌位前后）
+const rowLabels = [
+  { h: 4, key: 'chart.axis.close' },
+  { h: 3, key: 'chart.axis.closeMid' },
+  { h: 2, key: 'chart.axis.openMid' },
+  { h: 0, key: 'chart.axis.open' }
+] as const;
+const colLabels = [
+  { back: 0, key: 'chart.axis.front' },
+  { back: 1, key: 'chart.axis.central' },
+  { back: 2, key: 'chart.axis.back' }
+] as const;
+
+const ROUNDED_PAIR_DX = 0.045; // IPA 惯例：同格圆唇对并排，圆唇符号居右
+
+// 圆唇对（i/y、e/ø、ɛ/œ）共享同一格：圆唇且在前列时右移
 const dots = computed(() =>
-  Object.values(MONOPHTHONGS).map((m) => ({
-    x: xF(m.back, m.height),
-    y: yF(m.height),
-    s: m.symbol,
-    round: m.round
-  }))
+  Object.values(MONOPHTHONGS).map((m) => {
+    const pairDx = m.round && m.back === 0 ? ROUNDED_PAIR_DX : 0;
+    return {
+      x: xF(m.back, m.height) + pairDx,
+      y: yF(m.height),
+      s: m.symbol,
+      round: m.round
+    };
+  })
 );
 
 const diphLabels = computed(() =>
   Object.values(DIPHTHONGS).map((d) => {
     const base = MONOPHTHONGS[d.start];
-    return { x: xF(base.back, base.height) + 0.045, y: yF(base.height) - 0.045, s: d.symbol };
+    return {
+      x: xF(base.back, base.height) + d.labelOffset.dx,
+      y: yF(base.height) + d.labelOffset.dy,
+      s: d.symbol
+    };
   })
 );
 
@@ -71,6 +94,9 @@ const bPos = computed(() => pos(props.b));
       <polygon :points="trapezoid" fill="#f4f7fb" stroke="#9db3d3" stroke-width="1.5" />
       <line v-for="h in rowHeights" :key="'r' + h" :x1="px(xF(0, h))" :y1="py(yF(h))" :x2="px(xF(2, h))" :y2="py(yF(h))" stroke="#c9d6ea" stroke-width="1" />
       <line :x1="px(xF(1, 4))" :y1="py(yF(4))" :x2="px(xF(1, 0))" :y2="py(yF(0))" stroke="#c9d6ea" stroke-width="1" stroke-dasharray="3 3" />
+      <!-- 行/列轴标注 -->
+      <text v-for="r in rowLabels" :key="r.key" :x="px(0.145)" :y="py(yF(r.h))" text-anchor="end" font-size="10.5" fill="#8a94a6">{{ t(r.key) }}</text>
+      <text v-for="c in colLabels" :key="c.key" :x="px(xF(c.back, 0))" :y="py(0.965)" text-anchor="middle" font-size="10.5" fill="#8a94a6">{{ t(c.key) }}</text>
       <g v-for="d in dots" :key="d.s">
         <circle :cx="px(d.x)" :cy="py(d.y)" r="4" :fill="d.round ? '#8e44ad' : '#2d3436'" />
         <text :x="px(d.x + 0.02)" :y="py(d.y + 0.015)" font-size="12.5" fill="#333">{{ d.s }}</text>

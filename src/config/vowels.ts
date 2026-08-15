@@ -20,12 +20,12 @@ export const MONOPHTHONGS: Record<string, VowelFeatures> = {
   ə: { symbol: 'ə', height: 2.5, back: 1, round: false }
 };
 
-/** 复元音（词内可出现的输入/输出） */
+/** 复元音（词内可出现的输入/输出；labelOffset 错开同起点标签） */
 export const DIPHTHONGS: Record<string, DiphthongDef> = {
-  aɪ: { symbol: 'aɪ', start: 'a' },
-  aʊ: { symbol: 'aʊ', start: 'a' },
-  eɪ: { symbol: 'eɪ', start: 'e' },
-  əʊ: { symbol: 'əʊ', start: 'ə' }
+  aɪ: { symbol: 'aɪ', start: 'a', labelOffset: { dx: 0.05, dy: -0.06 } },
+  aʊ: { symbol: 'aʊ', start: 'a', labelOffset: { dx: 0.07, dy: 0.02 } },
+  eɪ: { symbol: 'eɪ', start: 'e', labelOffset: { dx: 0.06, dy: -0.05 } },
+  əʊ: { symbol: 'əʊ', start: 'ə', labelOffset: { dx: -0.05, dy: 0.03 } }
 };
 
 /** 词生成元音池（含权重：常见前不圆唇元音权重高） */

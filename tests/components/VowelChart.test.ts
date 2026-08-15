@@ -27,4 +27,38 @@ describe('VowelChart', () => {
     });
     expect(wrapper.find('circle[stroke="#e74c3c"]').exists()).toBe(true);
   });
+
+  it('复元音标签两两不重叠（aɪ/aʊ 同起点也要错开）', () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const labels = wrapper
+      .findAll('text[font-style="italic"]')
+      .map((el) => el.attributes('x') + ',' + el.attributes('y'));
+    expect(labels).toHaveLength(4);
+    expect(new Set(labels).size).toBe(4);
+  });
+
+  it('圆唇对并排：i 与 y、e 与 ø 的标签 x 不同', () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const posOf = (s: string) => {
+      const el = wrapper.findAll('text').find((t) => t.text() === s);
+      return el ? { x: el.attributes('x'), y: el.attributes('y') } : null;
+    };
+    const i = posOf('i');
+    const y = posOf('y');
+    const e = posOf('e');
+    const oSlash = posOf('ø');
+    expect(i).not.toBeNull();
+    expect(y).not.toBeNull();
+    expect(i!.x).not.toBe(y!.x);
+    expect(e!.x).not.toBe(oSlash!.x);
+  });
+
+  it('轴标注存在（闭/开、前/央/后）', () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const texts = wrapper.findAll('text').map((t) => t.text());
+    expect(texts).toContain('闭');
+    expect(texts).toContain('开');
+    expect(texts).toContain('前');
+    expect(texts).toContain('后');
+  });
 });
