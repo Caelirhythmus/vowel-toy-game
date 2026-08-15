@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useGame } from '@/composables/useGame';
 import { useI18n } from '@/composables/useI18n';
+import { useSpeech } from '@/composables/useSpeech';
 import { applicablePositions, applyRule, wordText } from '@/core';
 import type { Word } from '@/core';
 import { speechService } from '@/services/audio';
@@ -11,10 +12,18 @@ import FeedbackCard from './FeedbackCard.vue';
 
 const game = useGame();
 const { t, lang } = useI18n();
+const { status: piperStatus } = useSpeech();
 
 function speakWord(word: Word) {
   void speechService.playWord(word);
 }
+
+/** 发音按钮文案：加载中提示 / 主引擎不可用时标注回退 */
+const speakLabel = computed(() => {
+  if (piperStatus.value === 'loading') return t('btn.speak.loading');
+  if (piperStatus.value === 'error') return t('btn.speak.fallback');
+  return t('btn.speak');
+});
 
 const q = computed(() => game.state.question);
 const pair = computed(() =>
@@ -60,12 +69,12 @@ const speakSupported = speechService.supported();
 
     <div v-if="q && q.kind !== 'system'" class="words">
       <div class="word-box a">
-        <h3>A <button v-if="speakSupported" class="mini-btn" :title="t('btn.speak.note')" @click="speakWord(q.wordA)">{{ t('btn.speak') }}</button></h3>
+        <h3>A <button v-if="speakSupported" class="mini-btn" :disabled="piperStatus === 'loading'" :title="t('btn.speak.note')" @click="speakWord(q.wordA)">{{ speakLabel }}</button></h3>
         <div class="word">{{ wordText(q.wordA) }}</div>
       </div>
       <div class="arrow">→</div>
       <div class="word-box b">
-        <h3>B <button v-if="speakSupported" class="mini-btn" :title="t('btn.speak.note')" @click="speakWord(q.wordB)">{{ t('btn.speak') }}</button></h3>
+        <h3>B <button v-if="speakSupported" class="mini-btn" :disabled="piperStatus === 'loading'" :title="t('btn.speak.note')" @click="speakWord(q.wordB)">{{ speakLabel }}</button></h3>
         <div class="word">{{ wordText(q.wordB) }}</div>
       </div>
     </div>

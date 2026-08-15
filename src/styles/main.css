@@ -256,7 +256,13 @@ select {
   cursor: pointer;
 }
 
-.mini-btn:hover {
+.mini-btn:disabled {
+  border-color: #aab2c0;
+  color: #aab2c0;
+  cursor: wait;
+}
+
+.mini-btn:hover:not(:disabled) {
   background: #4b6cb7;
   color: #fff;
 }

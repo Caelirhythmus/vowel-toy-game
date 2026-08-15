@@ -66,6 +66,29 @@ interface LoadedSession {
   config: PiperConfig;
 }
 
+/* ---------- 加载状态（供 UI 提示“首次加载语音模型…”） ---------- */
+export type PiperStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+let piperStatus: PiperStatus = 'idle';
+const statusListeners = new Set<(s: PiperStatus) => void>();
+
+export function getPiperStatus(): PiperStatus {
+  return piperStatus;
+}
+
+/** 订阅加载状态；返回取消订阅函数 */
+export function onPiperStatus(cb: (s: PiperStatus) => void): () => void {
+  statusListeners.add(cb);
+  return () => {
+    statusListeners.delete(cb);
+  };
+}
+
+function setStatus(s: PiperStatus) {
+  piperStatus = s;
+  for (const cb of statusListeners) cb(s);
+}
+
 let sessionPromise: Promise<LoadedSession | null> | null = null;
 
 /** 依次尝试模型路径（int8 主 → float 回退），任一成功即返回会话 */
@@ -97,19 +120,28 @@ async function createSession(
 
 function loadSession(): Promise<LoadedSession | null> {
   if (!sessionPromise) {
+    setStatus('loading');
     sessionPromise = (async () => {
       try {
         const ort = await loadOrt();
         const loaded = await createSession(ort);
+        setStatus('ready');
         return { ort, ...loaded };
       } catch (e) {
         // 主引擎失败不静默：上层回退 espeak
+        setStatus('error');
         console.warn('[piper] 加载失败，将回退 espeak-ng 合成：', e);
         return null;
       }
     })();
   }
   return sessionPromise;
+}
+
+/** 预热：后台加载 onnxruntime + 语音模型（游戏开始时调用，首次点发音即可用） */
+export async function warmupPiper(): Promise<boolean> {
+  const loaded = await loadSession();
+  return loaded !== null;
 }
 
 /** 音素 id 序列 → 归一化 PCM（[-1,1]） */

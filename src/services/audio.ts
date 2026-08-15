@@ -10,11 +10,13 @@ import type { Word } from '@/core';
 import { VOWEL_AUDIO } from '@/config/audio';
 import { symbolToTtsText, wordToTtsText } from '@/core/espeak';
 import { synthWord } from './espeak';
-import { synthPiperWord } from './piper';
+import { synthPiperWord, warmupPiper } from './piper';
 
 export interface SpeechService {
   /** 是否有任何可用发声能力 */
   supported(): boolean;
+  /** 预热主引擎（后台下载/加载语音模型；幂等，可重复调用） */
+  warmup(): void;
   /** 单元音：权威录音（缺失时退化为 TTS 近似） */
   playVowel(symbol: string): void;
   /** 词形（伪词）：Piper 神经 TTS 主引擎 → espeak-ng 回退 → TTS 兜底 */
@@ -58,6 +60,11 @@ function playWavBytes(bytes: Uint8Array): boolean {
 export const speechService: SpeechService = {
   supported() {
     return typeof window !== 'undefined' && ('Audio' in window || 'speechSynthesis' in window);
+  },
+
+  warmup() {
+    // 后台预热 Piper（幂等：sessionPromise 只会建立一次）；失败静默，点发音时自然回退
+    void warmupPiper();
   },
 
   playVowel(symbol: string) {

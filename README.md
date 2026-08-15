@@ -22,6 +22,8 @@
   - 回退：**espeak-ng WASM 合成**（共振峰合成，近似；en-us 音色缺 [y ø œ a] 时就近近似）
   - 复元音：无权威录音，不提供发音（图上仅标注）
   - 浏览器 TTS 仅作最后兜底（近似拼写朗读，不读 IPA 原文）
+  - 首次使用体验：点“开始”即后台预热 Piper（下载/加载 ~28MB 模型，仅一次）；
+    加载期间发音按钮显示“语音模型加载中…”，就绪后自动恢复
   - 第三方许可见 `THIRD_PARTY_NOTICES.md`；`npm run vendor` 预置全部离线资源（espeak-ng / onnxruntime-web / piper 模型）
 - **自托管 IPA 字体**（Charis SIL 子集 woff2，SIL OFL 许可）：消除跨平台 ɛ/æ/ø/ə 渲染差异
 - **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计

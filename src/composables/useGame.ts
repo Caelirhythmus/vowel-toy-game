@@ -12,6 +12,7 @@ import {
   loadJSON,
   saveJSON
 } from '@/services/storage';
+import { speechService } from '@/services/audio';
 
 function loadSettings(): GameSettings {
   return loadJSON<GameSettings>(STORAGE_KEYS.settings, { ...core.DEFAULT_SETTINGS });
@@ -63,6 +64,8 @@ export function useGame() {
     if (!core.start(state, Date.now())) return;
     selection.value = new Set();
     modalOpen.value = false;
+    // 开始游戏即后台预热发音主引擎（Piper 模型下载/加载），首次点发音时免等待
+    speechService.warmup();
   }
 
   function reset() {
