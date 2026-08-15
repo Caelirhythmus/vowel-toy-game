@@ -64,13 +64,13 @@ describe('wordToPiperTokens 词 → Piper 音素名序列', () => {
     expect(wordToPiperTokens(W('u', 'i', 1))).toEqual(['p', 'u', 'b', 'ˈ', 'i']);
   });
 
-  it('长元音：ˈbiːba → b i ː b æ', () => {
+  it('长元音：ˈbiːba → b ˈ i ː b æ', () => {
     const w: Word = {
       c: ['b', 'b'],
       v: [{ s: 'i', long: true, diph: false }, { s: 'a', long: false, diph: false }],
       stress: 0
     };
-    expect(wordToPiperTokens(w)).toEqual(['b', 'i', 'ː', 'b', 'æ']);
+    expect(wordToPiperTokens(w)).toEqual(['b', 'ˈ', 'i', 'ː', 'b', 'æ']);
   });
 
   it('复元音：paʊˈbə → p a ʊ b ˈ ə', () => {
