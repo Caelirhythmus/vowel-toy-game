@@ -66,35 +66,80 @@ export const ESPEAK_CONSONANTS: Record<string, string> = {
  * - onnxruntime-web@1.18（esm/ 子目录 + wasm 在父目录，保留包结构）
  * - 音素名 → id 表在语音配置 .onnx.json 里，运行时拉取；
  *   此处只做“我们的符号 → Piper 音素名序列”（纯映射，可测）
+ * - 模型源：多渠道候选（按顺序尝试，失败自动降级）。
+ *   新增国内加速渠道（npmmirror/OSS 等）时只需往候选列表加条目。
  * ============================================================ */
+
+/** 模型源候选：parts=分片列表 / url=单文件（绝对 URL 直接用，相对路径以站点根归一化） */
+export interface ModelCandidate {
+  label: string;
+  timeoutMs: number;
+  parts?: readonly string[];
+  totalBytes?: number;
+  url?: string;
+  knownBytes?: number;
+}
+
+/** float 模型 4 个分片的相对路径（随仓库提交，不可变；本地/同源渠道用） */
+const FLOAT_PARTS_LOCAL = [
+  'vendor/piper/en_US-joe-medium.onnx.part1',
+  'vendor/piper/en_US-joe-medium.onnx.part2',
+  'vendor/piper/en_US-joe-medium.onnx.part3',
+  'vendor/piper/en_US-joe-medium.onnx.part4'
+] as const;
+
+/** float 模型 4 个分片的 jsDelivr 绝对 URL（CDN 镜像，分片不可变 → 无 @main 缓存问题） */
+function jsdelivrParts(host: string): string[] {
+  return FLOAT_PARTS_LOCAL.map(
+    (p) => `https://${host}/gh/Caelirhythmus/vowel-toy-game@main/public/${p}`
+  );
+}
 
 export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
-  /** 相对站点根的模型/配置路径（构建后以 document.baseURI 归一化） */
   /**
    * 音质优先架构：
-   * - 首选：float 原版分片（60MB 切成 4×15MB，jsDelivr 单文件限制 20MB；
-   *   分片随仓库提交且不可变，无 @main 缓存问题）——音质无损
-   * - 回退：本地 int8（16MB，非对称量化，音质略降但下载快）
+   * - 桌面：float 原版分片（60MB 切 4×15MB，jsDelivr 多节点 CDN + 本地）
+   *   → int8（16MB 非对称量化，音质略降但下载快）
+   * - 移动：int8 小模型为主（float 60MB 在手机端下载慢、会话创建易超时）
+   * - 全失败 → 降级 espeak/TTS
    */
   modelPath: 'vendor/piper/en_US-joe-medium.int8.onnx',
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
-  modelPathFloat: 'vendor/piper/en_US-joe-medium.onnx',
   modelBytesFloat: 63201294,
-  /** float 分片（每片 <20MB；部分文件名固定不可变） */
-  modelPartsExternal: [
-    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part1',
-    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part2',
-    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part3',
-    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part4'
-  ],
-  modelPartsLocal: [
-    'vendor/piper/en_US-joe-medium.onnx.part1',
-    'vendor/piper/en_US-joe-medium.onnx.part2',
-    'vendor/piper/en_US-joe-medium.onnx.part3',
-    'vendor/piper/en_US-joe-medium.onnx.part4'
-  ],
+  /** 桌面候选：jsDelivr cdn 主域 → gcore 子域 → 本地分片 → int8 本地 */
+  modelCandidatesDesktop: [
+    {
+      label: 'float jsDelivr CDN',
+      timeoutMs: 90_000,
+      parts: jsdelivrParts('cdn.jsdelivr.net'),
+      totalBytes: 63201294
+    },
+    {
+      label: 'float jsDelivr Gcore',
+      timeoutMs: 90_000,
+      parts: jsdelivrParts('gcore.jsdelivr.net'),
+      totalBytes: 63201294
+    },
+    {
+      label: 'float 本地分片',
+      timeoutMs: 60_000,
+      parts: FLOAT_PARTS_LOCAL,
+      totalBytes: 63201294
+    },
+    { label: 'int8 本地', timeoutMs: 60_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
+  ] as ModelCandidate[],
+  /** 移动候选：int8 CDN（jsDelivr，单文件 <20MB）→ int8 本地 */
+  modelCandidatesMobile: [
+    {
+      label: 'int8 jsDelivr',
+      timeoutMs: 60_000,
+      url: 'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.int8.onnx',
+      knownBytes: 16599901
+    },
+    { label: 'int8 本地', timeoutMs: 90_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
+  ] as ModelCandidate[],
   configPath: 'vendor/piper/en_US-joe-medium.onnx.json',
   /** onnxruntime-web 目录（esm 入口 + wasm 二进制） */
   ortPath: 'vendor/onnxruntime-web'

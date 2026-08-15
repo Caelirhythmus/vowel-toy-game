@@ -11,7 +11,7 @@
  * ============================================================ */
 import { wordToPiperIds } from '@/core/piper';
 import type { Word } from '@/core';
-import { PIPER_VOICE } from '@/config/audio';
+import { PIPER_VOICE, type ModelCandidate } from '@/config/audio';
 import { encodeWav16 } from './wav';
 
 /* ---------- onnxruntime-web 最小类型面 ---------- */
@@ -179,15 +179,6 @@ async function fetchParts(
   return out;
 }
 
-interface ModelCandidate {
-  label: string;
-  timeoutMs: number;
-  parts?: readonly string[];
-  totalBytes?: number;
-  url?: string;
-  knownBytes?: number;
-}
-
 /** 移动端检测：手机上 60MB float 分片下载慢、大模型 wasm 会话创建易超时，
  *  直接用小模型 int8（16MB）——小米 14 等实测 100% 卡住即由此 */
 function isMobileDevice(): boolean {
@@ -195,49 +186,38 @@ function isMobileDevice(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
+/** 候选 URL 解析：绝对 URL（CDN 镜像）原样使用，相对路径按站点根归一化 */
+function resolveCandidateUrl(u: string): string {
+  return /^https?:/i.test(u) ? u : vendorUrl(u);
+}
+
 /** 会话创建超时：wasm 初始化大模型在弱网/弱设备上可能极慢或挂起，超时降级下一候选 */
 const CREATE_TIMEOUT_MS = 30_000;
 
-/** 依次尝试模型源（桌面：float 分片 CDN → float 本地 → int8；移动：int8），任一成功即返回会话 */
+/** 依次尝试模型源（候选列表来自 PIPER_VOICE，桌面/移动不同），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
   const mobile = isMobileDevice();
+  const candidates: readonly ModelCandidate[] = mobile
+    ? PIPER_VOICE.modelCandidatesMobile
+    : PIPER_VOICE.modelCandidatesDesktop;
   if (mobile) {
-    console.info('[piper] 移动端设备：使用 int8 小模型（float 60MB 在手机端下载慢、会话创建易超时）');
+    console.info('[piper] 移动端设备：使用 int8 小模型候选（float 60MB 在手机端下载慢、会话创建易超时）');
   }
-  // 桌面音质优先：float 分片（jsDelivr，快且无损）→ 本地分片 → int8。
-  // 移动端：int8 小模型为主。失败逐个继续；最后一个失败才整体放弃。
-  const candidates: ModelCandidate[] = mobile
-    ? [{ label: 'int8 量化', timeoutMs: 90_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }]
-    : [
-        {
-          label: 'float CDN 分片',
-          timeoutMs: 90_000,
-          parts: PIPER_VOICE.modelPartsExternal,
-          totalBytes: PIPER_VOICE.modelBytesFloat
-        },
-        {
-          label: 'float 本地分片',
-          timeoutMs: 60_000,
-          parts: PIPER_VOICE.modelPartsLocal,
-          totalBytes: PIPER_VOICE.modelBytesFloat
-        },
-        { label: 'int8 量化', timeoutMs: 60_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }
-      ];
   let lastErr: unknown = null;
   for (const [i, cand] of candidates.entries()) {
     try {
       const modelBytes = cand.parts
         ? await fetchParts(
-            cand.parts.map((p) => (/^https?:/i.test(p) ? p : vendorUrl(p))),
+            cand.parts.map((p) => resolveCandidateUrl(p)),
             cand.totalBytes!,
             cand.timeoutMs,
             (pct) => setStatus('loading', pct)
           )
-        : await fetchWithProgress(vendorUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
+        : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
             setStatus('loading', pct)
           );
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
