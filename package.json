@@ -5,7 +5,7 @@
   "type": "module",
   "description": "元音演变实验室 · Vowel Change Lab — 语音学学习小游戏（Vue 3 + TypeScript + Vite）",
   "scripts": {
-    "vendor": "node scripts/vendor-espeak.mjs",
+    "vendor": "node scripts/vendor-espeak.mjs && node scripts/vendor-piper.mjs",
     "dev": "npm run vendor && vite",
     "build": "npm run vendor && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "espeak-ng": "^1.0.2",
+    "onnxruntime-web": "1.18.0",
     "vue": "^3.5.41",
     "zod": "^3.25.76"
   },

@@ -18,9 +18,11 @@
 - **教学反馈**：答对后展示类型、频率、说明与实例卡片；答错保留原题重试
 - **发音播放**：
   - 元音符号：**权威录音**（Wikimedia Commons 15 个单元音，CC BY-SA 3.0，自托管 WAV，逐文件署名见 `public/audio/ATTRIBUTIONS.txt`）
-  - 词形（伪词）：**espeak-ng WASM 离线合成**（按 IPA→音素助记符映射，近似；en-us 音色缺 [y ø œ a] 时就近近似；GPL-3.0 声明见 `THIRD_PARTY_NOTICES.md`）
+  - 词形（伪词）主引擎：**Piper 神经 TTS**（VITS，显式音素 id 输入，保证每个元音精确可控；CC0 音色 en_US-joe-medium + onnxruntime-web，均离线运行；首次点播需下载 ~60MB 模型）
+  - 回退：**espeak-ng WASM 合成**（共振峰合成，近似；en-us 音色缺 [y ø œ a] 时就近近似）
   - 复元音：无权威录音，不提供发音（图上仅标注）
-  - 浏览器 TTS 仅作最后兜底（不再用于音标朗读）
+  - 浏览器 TTS 仅作最后兜底（近似拼写朗读，不读 IPA 原文）
+  - 第三方许可见 `THIRD_PARTY_NOTICES.md`；`npm run vendor` 预置全部离线资源（espeak-ng / onnxruntime-web / piper 模型）
 - **自托管 IPA 字体**（Charis SIL 子集 woff2，SIL OFL 许可）：消除跨平台 ɛ/æ/ø/ə 渲染差异
 - **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计
 - **可访问性**：`aria-live` 反馈、键盘操作（元音点可 Tab 聚焦 + Enter/Space 发音）、Esc 关闭弹窗、焦点管理、`prefers-reduced-motion`
@@ -44,7 +46,10 @@ src/
 │   └── i18n.ts      #   类型安全的中英文案字典 + 插值
 ├── services/        # 端口与适配器（副作用隔离）
 │   ├── storage.ts   #   localStorage 适配（隐私模式降级内存）
-│   └── audio.ts     #   语音服务（SpeechSynthesis，可替换实现）
+│   ├── audio.ts     #   语音服务（录音 → Piper → espeak → TTS 兜底）
+│   ├── piper.ts     #   Piper 神经 TTS（onnxruntime-web WASM 推理）
+│   ├── espeak.ts    #   espeak-ng WASM 适配（回退引擎）
+│   └── wav.ts       #   Float32 PCM → WAV 编码（纯函数）
 ├── composables/     # 编排层（Vue 响应式接线）
 │   ├── useGame.ts   #   单例游戏 store：状态/计时/自动下一题/持久化
 │   └── useI18n.ts   #   语言状态 + 文案取用
