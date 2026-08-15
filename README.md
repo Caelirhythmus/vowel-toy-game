@@ -16,7 +16,11 @@
 - **9 条声明式演变规则**：每条带真实语言实例（英语元音大推移、日耳曼 i-umlaut / a-mutation、俄语 аканье、汉语方言高元音复化等）与粗略频率档
 - **环境条件**：重音位置、邻接元音、元音长短都会影响规则是否触发
 - **教学反馈**：答对后展示类型、频率、说明与实例卡片；答错保留原题重试
-- **发音播放**：浏览器 Speech Synthesis 朗读词形与元音符号（服务适配器实现，可替换为 espeak-ng WASM / 预录音频）
+- **发音播放**：
+  - 元音符号：**权威录音**（Wikimedia Commons 15 个单元音，CC BY-SA 3.0，自托管 WAV，逐文件署名见 `public/audio/ATTRIBUTIONS.txt`）
+  - 词形（伪词）：**espeak-ng WASM 离线合成**（按 IPA→音素助记符映射，近似；en-us 音色缺 [y ø œ a] 时就近近似；GPL-3.0 声明见 `THIRD_PARTY_NOTICES.md`）
+  - 复元音：无权威录音，不提供发音（图上仅标注）
+  - 浏览器 TTS 仅作最后兜底（不再用于音标朗读）
 - **自托管 IPA 字体**（Charis SIL 子集 woff2，SIL OFL 许可）：消除跨平台 ɛ/æ/ø/ə 渲染差异
 - **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计
 - **可访问性**：`aria-live` 反馈、键盘操作（元音点可 Tab 聚焦 + Enter/Space 发音）、Esc 关闭弹窗、焦点管理、`prefers-reduced-motion`

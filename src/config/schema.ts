@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { RULES } from '@/config/rules';
 import { MONOPHTHONGS, DIPHTHONGS, VOWEL_POOL, LONG_PROB, FORMANT_ESTIMATES } from '@/config/vowels';
+import { DIPHTHONG_MNEMONICS, ESPEAK_MNEMONICS, VOWEL_AUDIO } from '@/config/audio';
 import { CHANGE_TYPE_IDS, TIER_IDS } from '@/config/game';
 import type { Rule } from '@/core/types';
 
@@ -84,6 +85,24 @@ export function validateVowels(): ContentIssue[] {
     const d = DIPHTHONGS[key];
     if (!d.labelOffset || typeof d.labelOffset.dx !== 'number' || typeof d.labelOffset.dy !== 'number') {
       issues.push({ path: `vowels.diph[${key}]`, message: '缺少 labelOffset' });
+    }
+  }
+  for (const key of Object.keys(MONOPHTHONGS)) {
+    if (!VOWEL_AUDIO[key]) {
+      issues.push({ path: `audio.vowel[${key}]`, message: '缺少发音录音配置' });
+    }
+    if (!ESPEAK_MNEMONICS[key]) {
+      issues.push({ path: `audio.espeak[${key}]`, message: '缺少 espeak 助记符（长音可回退短音）' });
+    }
+  }
+  for (const key of Object.keys(DIPHTHONGS)) {
+    if (!DIPHTHONG_MNEMONICS[key]) {
+      issues.push({ path: `audio.espeak.diph[${key}]`, message: '缺少复元音助记符序列' });
+    }
+  }
+  for (const key of Object.keys(ESPEAK_MNEMONICS)) {
+    if (!/^[A-Za-z0-9@:']+$/.test(ESPEAK_MNEMONICS[key])) {
+      issues.push({ path: `audio.espeak.map[${key}]`, message: '助记符含非法字符' });
     }
   }
   return issues;

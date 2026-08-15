@@ -336,6 +336,17 @@ select {
   font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', 'Arial Unicode MS', sans-serif;
 }
 
+.chart-svg-wrap svg g[role='button'],
+.chart-svg-wrap svg text[role='button'] {
+  cursor: pointer;
+  outline: none;
+}
+
+.chart-svg-wrap svg g[role='button']:focus-visible {
+  outline: 2px solid #f39c12;
+  outline-offset: 3px;
+}
+
 .chart-tip {
   position: absolute;
   transform: translate(-50%, -145%);

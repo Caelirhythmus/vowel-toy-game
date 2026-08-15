@@ -1,0 +1,18 @@
+# IPA 元音发音录音（Wikimedia Commons，CC BY-SA 3.0）
+# 来源：https://commons.wikimedia.org 对应 IPA 元音词条
+
+vowel-alpha.wav = Open back unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-y.wav = Close front rounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-e.wav = Close-mid front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-o-slash.wav = Close-mid front rounded vowel.ogg（录音：Denelson83）
+vowel-a.wav = Open front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-i.wav = Close front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-eps.wav = Open-mid front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-oe.wav = Open-mid front rounded vowel.ogg（录音：No machine-readable author provided. JøMa assumed (based on copyright claims).）
+vowel-open-o.wav = Open-mid back rounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-u.wav = Close back rounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-schwa.wav = Mid central vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-o.wav = Close-mid back rounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-iota.wav = Near-close near-front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-ae.wav = Near-open front unrounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）
+vowel-upsilon.wav = Near-close near-back rounded vowel.ogg（录音：No machine-readable author provided. Denelson83 assumed (based on copyright claims).）

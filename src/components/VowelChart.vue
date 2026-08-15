@@ -117,27 +117,30 @@ function dotState(s: string): 'source' | 'target' | 'idle' | 'normal' {
   return 'idle';
 }
 
-/* ---------- 悬停特征卡 ---------- */
+/* ---------- 悬停特征卡 + 朗读标识 ---------- */
 const hovered = ref<{ x: number; y: number; text: string } | null>(null);
+const hoverSym = ref<string | null>(null);
 
 function describeDot(d: Dot): string {
   const feats = describeVowel(d.features, lang.value);
   const est = view.value === 'acoustic' ? acousticPoint(d.s) : null;
   const formants = est ? ` · F1 ${est.f1} Hz · F2 ${est.f2} Hz` : '';
-  return `${d.s} — ${feats}${formants}`;
+  return `${d.s} — ${feats}${formants} · 🔊 ${t('chart.speak')}`;
 }
 
 function showTip(d: Dot) {
   hovered.value = { x: d.x, y: d.y, text: describeDot(d) };
+  hoverSym.value = d.s;
 }
 
 function hideTip() {
   hovered.value = null;
+  hoverSym.value = null;
 }
 
-/* ---------- 发音点播 ---------- */
-function speak(text: string) {
-  speechService.speak(text);
+/* ---------- 发音点播（仅单元音有权威录音；复元音按用户决定不发音） ---------- */
+function speakVowel(symbol: string) {
+  speechService.playVowel(symbol);
 }
 
 /* ---------- 轴标注 ---------- */
@@ -210,7 +213,7 @@ const colLabels = [
           <text :x="px(ACOUSTIC_BOX.x0 - 0.018)" :y="py(ACOUSTIC_BOX.y1)" text-anchor="end" font-size="9" fill="#a0aaba">{{ '800' }}</text>
         </template>
 
-        <!-- 元音点（可聚焦/点击朗读/悬停看特征卡） -->
+        <!-- 元音点（可聚焦/点击播放权威录音/悬停看特征卡） -->
         <g
           v-for="d in dots"
           :key="d.s"
@@ -221,9 +224,9 @@ const colLabels = [
           @mouseleave="hideTip"
           @focusin="showTip(d)"
           @focusout="hideTip"
-          @click="speak(d.s)"
-          @keydown.enter.prevent="speak(d.s)"
-          @keydown.space.prevent="speak(d.s)"
+          @click="speakVowel(d.s)"
+          @keydown.enter.prevent="speakVowel(d.s)"
+          @keydown.space.prevent="speakVowel(d.s)"
         >
           <circle
             :cx="px(d.x)" :cy="py(d.y)" r="4"
@@ -238,19 +241,21 @@ const colLabels = [
             :fill="dotState(d.s) === 'idle' ? '#aab2c0' : dotState(d.s) === 'source' ? '#1e7d3c' : '#333'"
             :opacity="dotState(d.s) === 'idle' ? 0.4 : 1"
           >{{ d.s }}</text>
+          <!-- 悬停/聚焦时的可见喇叭标识 -->
+          <text
+            v-if="hoverSym === d.s"
+            :x="px(d.x - 0.05)" :y="py(d.y)" font-size="10"
+            text-anchor="middle" :aria-hidden="true"
+          >🔊</text>
         </g>
 
-        <!-- 复元音标签（同起点已按 labelOffset 错开） -->
+        <!-- 复元音标签（同起点已按 labelOffset 错开；无发音资源，纯标注） -->
         <text
           v-for="d in diphLabels"
           :key="d.s"
           :x="px(d.x)" :y="py(d.y)" font-size="11.5" font-style="italic"
           :fill="diffSet && diffSet.sources.has(d.s) ? '#1e7d3c' : '#7f8c8d'"
-          role="button" tabindex="0"
-          :aria-label="`${describeDiphthong(d.s, d.s.slice(0, 1), lang)}，${t('chart.speak')}`"
-          @click="speak(d.s)"
-          @keydown.enter.prevent="speak(d.s)"
-          @keydown.space.prevent="speak(d.s)"
+          :aria-label="describeDiphthong(d.s, d.s.slice(0, 1), lang)"
         >{{ d.s }}</text>
 
         <!-- A→B 高亮（路径动画 + 目标脉冲） -->
