@@ -64,8 +64,8 @@ const px = (fx: number) => (fx * W).toFixed(1);
 const py = (fy: number) => (fy * H).toFixed(1);
 const P = (fx: number, fy: number) => `${px(fx)},${py(fy)}`;
 
-/** 梯形底图顶点：左上→右上→右下→左下（上宽下窄，宽边在上） */
-const trapezoid = `${P(0.16, 0.13)} ${P(0.84, 0.13)} ${P(0.3, 0.88)} ${P(0.7, 0.88)}`;
+/** 梯形底图顶点：左上→右上→右下→左下（上宽下窄，宽边在上；顺序不可乱，否则自交成沙漏） */
+const trapezoid = `${P(0.16, 0.13)} ${P(0.84, 0.13)} ${P(0.7, 0.88)} ${P(0.3, 0.88)}`;
 const rowHeights = [4, 3, 2, 0] as const;
 
 /* ---------- 数据 ---------- */

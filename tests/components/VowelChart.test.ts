@@ -115,7 +115,7 @@ describe('VowelChart', () => {
     expect(wrapper.find('circle.b-pulse').exists()).toBe(true);
   });
 
-  it('元音图梯形上宽下窄（回归：曾画反为上窄下宽）', () => {
+  it('元音图梯形上宽下窄且不自交（回归：曾画反/曾自交成沙漏）', () => {
     const wrapper = mount(VowelChart, { props: { a: null, b: null } });
     const pts = wrapper
       .find('polygon')
@@ -124,6 +124,11 @@ describe('VowelChart', () => {
       .split(/\s+/)
       .map((p) => p.split(',').map(Number));
     expect(pts).toHaveLength(4);
+    // 顶点顺序必须为 左上→右上→右下→左下，否则 SVG 填充自交成沙漏
+    expect(pts[0][0]).toBeLessThan(pts[1][0]); // 顶边：左→右
+    expect(pts[1][1]).toBeLessThan(pts[2][1]); // 右边：上→下
+    expect(pts[2][0]).toBeGreaterThan(pts[3][0]); // 底边：右→左
+    expect(pts[3][1]).toBeGreaterThan(pts[0][1]); // 左边：下→上
     const topWidth = pts[1][0] - pts[0][0];
     const bottomWidth = pts[2][0] - pts[3][0];
     expect(topWidth).toBeGreaterThan(bottomWidth); // 宽边在上
