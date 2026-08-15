@@ -71,14 +71,12 @@ export const ESPEAK_CONSONANTS: Record<string, string> = {
 export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
   /** 相对站点根的模型/配置路径（构建后以 document.baseURI 归一化） */
-  /** 主模型为 int8 动态量化版（60MB→18MB，首次加载快 70%）；float 版保留作自动回退 */
-  modelPath: 'vendor/piper/en_US-joe-medium.int8.onnx',
   /**
-   * 外部 CDN 镜像（jsDelivr gh CDN，国内访问通常显著快于 github.io/Vercel）。
-   * 加载顺序：外部 int8（45s）→ 本地 int8（60s）→ float（仅 int8 404 时）。
-   * ?v=2 为缓存破坏版本号（模型内容变更时 +1）。
+   * 主模型为 int8 非对称量化版（60MB→16MB）。只走本地（同源）下载：
+   * jsDelivr 的 @main 分支引用有 ~12h 缓存周期，模型更新后 CDN 会持续
+   * 返回旧文件（曾因此反复拿到 ConvInteger 旧模型），故弃用 CDN 候选。
    */
-  modelUrlExternal: 'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.int8.onnx?v=4',
+  modelPath: 'vendor/piper/en_US-joe-medium.int8.onnx',
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelPathFloat: 'vendor/piper/en_US-joe-medium.onnx',

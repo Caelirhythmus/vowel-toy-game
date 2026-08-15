@@ -45,11 +45,6 @@ function vendorUrl(relPath: string): string {
   return new URL(`${import.meta.env.BASE_URL}${relPath}`, document.baseURI).href;
 }
 
-/** 模型候选 URL：绝对 URL（外部 CDN）原样使用，相对路径按站点根归一化 */
-function modelUrl(pathOrUrl: string): string {
-  return /^https?:/i.test(pathOrUrl) ? pathOrUrl : vendorUrl(pathOrUrl);
-}
-
 /** 带超时与进度回调的下载；进度基于已知模型字节数（content-length 可能
  *  因服务器 gzip 压缩/分块传输而失真——GH Pages 对 .onnx 动态 gzip 时
  *  content-length 是压缩后大小，而流读到的字节是解压后大小，比例会超 100%） */
@@ -138,25 +133,21 @@ function setStatus(s: PiperStatus, progress?: number | null) {
 
 let sessionPromise: Promise<LoadedSession | null> | null = null;
 
-/** 依次尝试模型源（外部 CDN int8 → 本地 int8 → float），任一成功即返回会话 */
+/** 依次尝试模型源（本地 int8 → 本地 float），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
-  // 加载顺序与超时：
-  //  1) 外部 CDN（jsDelivr，国内访问通常快）45s
-  //  2) 本地 int8（同源，GH Pages/Vercel）60s
-  //  3) float（仅当 int8 明确 404——老部署无 int8 文件；网络/运行时问题
-  //     时 float 只会更慢或同样失败，直接放弃降级）
+  // 只走本地（同源）下载：jsDelivr @main 缓存周期 ~12h，CDN 会持续返回旧模型
+  // （曾反复拿到 ConvInteger 旧文件）。int8 失败 → float（60s 超时）→ 降级。
   const candidates = [
-    { url: PIPER_VOICE.modelUrlExternal, label: 'int8 CDN', knownBytes: PIPER_VOICE.modelBytes, timeoutMs: 45_000 },
-    { url: PIPER_VOICE.modelPath, label: 'int8 本地', knownBytes: PIPER_VOICE.modelBytes, timeoutMs: 60_000 },
+    { url: PIPER_VOICE.modelPath, label: 'int8 量化', knownBytes: PIPER_VOICE.modelBytes, timeoutMs: 90_000 },
     { url: PIPER_VOICE.modelPathFloat, label: 'float 原版', knownBytes: PIPER_VOICE.modelBytesFloat, timeoutMs: 60_000 }
   ] as const;
   for (const [i, cand] of candidates.entries()) {
     try {
-      const modelBytes = await fetchWithProgress(modelUrl(cand.url), cand.knownBytes, cand.timeoutMs, (pct) =>
+      const modelBytes = await fetchWithProgress(vendorUrl(cand.url), cand.knownBytes, cand.timeoutMs, (pct) =>
         setStatus('loading', pct)
       );
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
@@ -170,14 +161,9 @@ async function createSession(
       return { session, config };
     } catch (e) {
       const msg = (e as Error).message;
-      const is404 = msg.includes('HTTP 404');
-      if (i === 2) {
-        // float 是最后候选：失败即整体放弃
-        throw new Error(`语音模型全部加载失败（${msg}）`);
-      }
-      if (i === 1 && !is404) {
-        // 本地 int8 非 404 失败（网络/运行时问题）→ float 无益，立即放弃
-        throw new Error(`int8 模型加载失败（${msg}）——网络或运行时问题，跳过 float 回退`);
+      if (i === 1 || !msg.includes('HTTP 404')) {
+        // float 是最后候选；或 int8 非 404 失败（网络/运行时问题）→ float 无益
+        throw new Error(`语音模型加载失败（${msg}）`);
       }
       console.warn(`[piper] ${cand.label} 不可用（${msg}），尝试下一个…`);
     }
