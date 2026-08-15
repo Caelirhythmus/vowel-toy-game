@@ -27,7 +27,8 @@ describe('QuestionArea 发音按钮（Piper 加载状态）', () => {
   const game = useGame();
 
   beforeEach(() => {
-    listeners.length = 0;
+    // 注意：不要清空 listeners —— useSpeech 的 subscribed 标志是模块级的，
+    // 只有首个 mount 会注册回调；回调操作的是模块级 ref，跨测试复用无害
     game.reset();
     game.setSetting('mode', 'type');
     game.setSetting('difficulty', 'easy');
