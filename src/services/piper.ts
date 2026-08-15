@@ -133,23 +133,84 @@ function setStatus(s: PiperStatus, progress?: number | null) {
 
 let sessionPromise: Promise<LoadedSession | null> | null = null;
 
-/** 依次尝试模型源（本地 int8 → 本地 float），任一成功即返回会话 */
+/** 并行下载多个分片并拼接（jsDelivr 单文件 ≤20MB，float 模型切成 4 片） */
+async function fetchParts(
+  urls: string[],
+  totalBytes: number,
+  timeoutMs: number,
+  onProgress: ((pct: number | null) => void) | null
+): Promise<Uint8Array> {
+  const partBytes = Math.ceil(totalBytes / urls.length);
+  let received = 0;
+  const chunks = await Promise.all(
+    urls.map((url, _i) =>
+      fetchWithProgress(url, partBytes, timeoutMs, (pct) => {
+        // 聚合进度：已完成分片字节 + 当前分片内进度
+        onProgress?.(
+          Math.min(100, Math.round(((received + ((pct ?? 0) / 100) * partBytes) / totalBytes) * 100))
+        );
+      }).then((bytes) => {
+        received += bytes.length;
+        return bytes;
+      })
+    )
+  );
+  const total = chunks.reduce((s, b) => s + b.length, 0);
+  if (total !== totalBytes) throw new Error(`分片字节数不符：${total} != ${totalBytes}`);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const b of chunks) {
+    out.set(b, off);
+    off += b.length;
+  }
+  return out;
+}
+
+interface ModelCandidate {
+  label: string;
+  timeoutMs: number;
+  parts?: readonly string[];
+  totalBytes?: number;
+  url?: string;
+  knownBytes?: number;
+}
+
+/** 依次尝试模型源（float 分片 CDN → float 分片本地 → int8 本地），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
-  // 只走本地（同源）下载：jsDelivr @main 缓存周期 ~12h，CDN 会持续返回旧模型
-  // （曾反复拿到 ConvInteger 旧文件）。int8 失败 → float（60s 超时）→ 降级。
-  const candidates = [
-    { url: PIPER_VOICE.modelPath, label: 'int8 量化', knownBytes: PIPER_VOICE.modelBytes, timeoutMs: 90_000 },
-    { url: PIPER_VOICE.modelPathFloat, label: 'float 原版', knownBytes: PIPER_VOICE.modelBytesFloat, timeoutMs: 60_000 }
-  ] as const;
+  // 音质优先：float 分片（jsDelivr，快且无损）→ 本地分片 → int8（小但音质略降）。
+  // 失败逐个继续；最后一个失败才整体放弃。
+  const candidates: ModelCandidate[] = [
+    {
+      label: 'float CDN 分片',
+      timeoutMs: 90_000,
+      parts: PIPER_VOICE.modelPartsExternal,
+      totalBytes: PIPER_VOICE.modelBytesFloat
+    },
+    {
+      label: 'float 本地分片',
+      timeoutMs: 60_000,
+      parts: PIPER_VOICE.modelPartsLocal,
+      totalBytes: PIPER_VOICE.modelBytesFloat
+    },
+    { label: 'int8 量化', timeoutMs: 60_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }
+  ];
+  let lastErr: unknown = null;
   for (const [i, cand] of candidates.entries()) {
     try {
-      const modelBytes = await fetchWithProgress(vendorUrl(cand.url), cand.knownBytes, cand.timeoutMs, (pct) =>
-        setStatus('loading', pct)
-      );
+      const modelBytes = cand.parts
+        ? await fetchParts(
+            cand.parts.map((p) => (/^https?:/i.test(p) ? p : vendorUrl(p))),
+            cand.totalBytes!,
+            cand.timeoutMs,
+            (pct) => setStatus('loading', pct)
+          )
+        : await fetchWithProgress(vendorUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
+            setStatus('loading', pct)
+          );
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
       // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
       // 传错会在 create 时直接抛 "unsupported graph optimization level"）
@@ -160,15 +221,13 @@ async function createSession(
       console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz）`);
       return { session, config };
     } catch (e) {
-      const msg = (e as Error).message;
-      if (i === 1 || !msg.includes('HTTP 404')) {
-        // float 是最后候选；或 int8 非 404 失败（网络/运行时问题）→ float 无益
-        throw new Error(`语音模型加载失败（${msg}）`);
+      lastErr = e;
+      if (i < candidates.length - 1) {
+        console.warn(`[piper] ${cand.label} 不可用（${(e as Error).message}），尝试下一个…`);
       }
-      console.warn(`[piper] ${cand.label} 不可用（${msg}），尝试下一个…`);
     }
   }
-  throw new Error('int8 与 float 模型均加载失败');
+  throw new Error(`语音模型全部加载失败：${(lastErr as Error)?.message ?? lastErr}`);
 }
 
 function loadSession(): Promise<LoadedSession | null> {

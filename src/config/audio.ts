@@ -72,15 +72,29 @@ export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
   /** 相对站点根的模型/配置路径（构建后以 document.baseURI 归一化） */
   /**
-   * 主模型为 int8 非对称量化版（60MB→16MB）。只走本地（同源）下载：
-   * jsDelivr 的 @main 分支引用有 ~12h 缓存周期，模型更新后 CDN 会持续
-   * 返回旧文件（曾因此反复拿到 ConvInteger 旧模型），故弃用 CDN 候选。
+   * 音质优先架构：
+   * - 首选：float 原版分片（60MB 切成 4×15MB，jsDelivr 单文件限制 20MB；
+   *   分片随仓库提交且不可变，无 @main 缓存问题）——音质无损
+   * - 回退：本地 int8（16MB，非对称量化，音质略降但下载快）
    */
   modelPath: 'vendor/piper/en_US-joe-medium.int8.onnx',
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelPathFloat: 'vendor/piper/en_US-joe-medium.onnx',
   modelBytesFloat: 63201294,
+  /** float 分片（每片 <20MB；部分文件名固定不可变） */
+  modelPartsExternal: [
+    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part1',
+    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part2',
+    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part3',
+    'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.onnx.part4'
+  ],
+  modelPartsLocal: [
+    'vendor/piper/en_US-joe-medium.onnx.part1',
+    'vendor/piper/en_US-joe-medium.onnx.part2',
+    'vendor/piper/en_US-joe-medium.onnx.part3',
+    'vendor/piper/en_US-joe-medium.onnx.part4'
+  ],
   configPath: 'vendor/piper/en_US-joe-medium.onnx.json',
   /** onnxruntime-web 目录（esm 入口 + wasm 二进制） */
   ortPath: 'vendor/onnxruntime-web'
