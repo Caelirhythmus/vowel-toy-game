@@ -68,25 +68,40 @@ interface LoadedSession {
 
 let sessionPromise: Promise<LoadedSession | null> | null = null;
 
+/** 依次尝试模型路径（int8 主 → float 回退），任一成功即返回会话 */
+async function createSession(
+  ort: OrtApi
+): Promise<{ session: OrtSession; config: PiperConfig }> {
+  const cfgRes = await fetch(vendorUrl(PIPER_VOICE.configPath));
+  if (!cfgRes.ok) throw new Error(`配置加载失败 HTTP ${cfgRes.status}`);
+  const config = (await cfgRes.json()) as PiperConfig;
+  for (const [path, label] of [
+    [PIPER_VOICE.modelPath, 'int8 量化'],
+    [PIPER_VOICE.modelPathFloat, 'float 原版']
+  ] as const) {
+    try {
+      const modelRes = await fetch(vendorUrl(path));
+      if (!modelRes.ok) throw new Error(`模型加载失败 HTTP ${modelRes.status}`);
+      const session = await ort.InferenceSession.create(
+        new Uint8Array(await modelRes.arrayBuffer()),
+        { executionProviders: ['wasm'] }
+      );
+      console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${label}，${config.audio.sample_rate}Hz）`);
+      return { session, config };
+    } catch (e) {
+      console.warn(`[piper] ${label} 模型不可用（${(e as Error).message}），尝试下一个…`);
+    }
+  }
+  throw new Error('int8 与 float 模型均加载失败');
+}
+
 function loadSession(): Promise<LoadedSession | null> {
   if (!sessionPromise) {
     sessionPromise = (async () => {
       try {
-        const [ort, cfgRes, modelRes] = await Promise.all([
-          loadOrt(),
-          fetch(vendorUrl(PIPER_VOICE.configPath)),
-          fetch(vendorUrl(PIPER_VOICE.modelPath))
-        ]);
-        if (!cfgRes.ok || !modelRes.ok) {
-          throw new Error(`模型资源加载失败 HTTP ${cfgRes.status}/${modelRes.status}`);
-        }
-        const config = (await cfgRes.json()) as PiperConfig;
-        const session = await ort.InferenceSession.create(
-          new Uint8Array(await modelRes.arrayBuffer()),
-          { executionProviders: ['wasm'] }
-        );
-        console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${config.audio.sample_rate}Hz）`);
-        return { ort, session, config };
+        const ort = await loadOrt();
+        const loaded = await createSession(ort);
+        return { ort, ...loaded };
       } catch (e) {
         // 主引擎失败不静默：上层回退 espeak
         console.warn('[piper] 加载失败，将回退 espeak-ng 合成：', e);

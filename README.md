@@ -18,7 +18,7 @@
 - **教学反馈**：答对后展示类型、频率、说明与实例卡片；答错保留原题重试
 - **发音播放**：
   - 元音符号：**权威录音**（Wikimedia Commons 15 个单元音，CC BY-SA 3.0，自托管 WAV，逐文件署名见 `public/audio/ATTRIBUTIONS.txt`）
-  - 词形（伪词）主引擎：**Piper 神经 TTS**（VITS，显式音素 id 输入，保证每个元音精确可控；CC0 音色 en_US-joe-medium + onnxruntime-web，均离线运行；首次点播需下载 ~60MB 模型）
+  - 词形（伪词）主引擎：**Piper 神经 TTS**（VITS，显式音素 id 输入，保证每个元音精确可控；CC0 音色 en_US-joe-medium + onnxruntime-web，均离线运行；默认 int8 量化模型 ~18MB，首次点播即下载）
   - 回退：**espeak-ng WASM 合成**（共振峰合成，近似；en-us 音色缺 [y ø œ a] 时就近近似）
   - 复元音：无权威录音，不提供发音（图上仅标注）
   - 浏览器 TTS 仅作最后兜底（近似拼写朗读，不读 IPA 原文）

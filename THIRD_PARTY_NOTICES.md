@@ -4,9 +4,11 @@
 
 - 项目：[rhasspy/piper](https://github.com/rhasspy/piper)（VITS 神经 TTS；[onnxruntime-web](https://github.com/microsoft/onnxruntime) WASM 推理）
 - 许可：Piper 代码 **MIT**；onnxruntime-web **MIT**；均不随仓库提交，由 `npm run vendor` 预置
-- 音色：**en_US-joe-medium**（`rhasspy/piper-voices`，单说话人，22.05kHz，~60MB）
+- 音色：**en_US-joe-medium**（`rhasspy/piper-voices`，单说话人，22.05kHz）
   - 数据集：OHF-Voice voice-datasets，许可 **CC0**（公有领域，[模型卡](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/joe/medium)）
   - 下载源：`https://hf-mirror.com/rhasspy/piper-voices/...`（回退 huggingface.co）
+  - 部署形态：默认使用 **int8 动态量化版**（float 60MB → int8 ~18MB，首次加载快约 70%；
+    `npm run vendor` 在具备 python3 + onnxruntime 时自动量化，float 原版保留为运行时自动回退）
 - 用途：伪词（如 ˈbata）主合成引擎——显式音素 id 输入（BOS+音素+pad+EOS），保证每个元音精确可控
 - 依赖运行时：`onnxruntime-web@1.18.0`（固定版本；1.19+ 仅提供线程版 wasm，需 COOP/COEP，GitHub Pages 不可用）
 - 使用限制说明：en-us 音色缺失 [y ø œ a]（前圆唇/开前元音），映射为就近近似（y→i、ø→e、œ→ɛ、a→æ），详见 `src/config/audio.ts`
