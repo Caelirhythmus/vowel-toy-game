@@ -109,6 +109,8 @@ export const speechService: SpeechService = {
     try {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
       const synth = window.speechSynthesis;
+      // 部分浏览器（尤其移动端）首次 speak 需先加载语音列表，否则无声
+      if (typeof synth.getVoices === 'function') synth.getVoices();
       synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en';

@@ -188,29 +188,45 @@ interface ModelCandidate {
   knownBytes?: number;
 }
 
-/** 依次尝试模型源（float 分片 CDN → float 分片本地 → int8 本地），任一成功即返回会话 */
+/** 移动端检测：手机上 60MB float 分片下载慢、大模型 wasm 会话创建易超时，
+ *  直接用小模型 int8（16MB）——小米 14 等实测 100% 卡住即由此 */
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+/** 会话创建超时：wasm 初始化大模型在弱网/弱设备上可能极慢或挂起，超时降级下一候选 */
+const CREATE_TIMEOUT_MS = 30_000;
+
+/** 依次尝试模型源（桌面：float 分片 CDN → float 本地 → int8；移动：int8），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
-  // 音质优先：float 分片（jsDelivr，快且无损）→ 本地分片 → int8（小但音质略降）。
-  // 失败逐个继续；最后一个失败才整体放弃。
-  const candidates: ModelCandidate[] = [
-    {
-      label: 'float CDN 分片',
-      timeoutMs: 90_000,
-      parts: PIPER_VOICE.modelPartsExternal,
-      totalBytes: PIPER_VOICE.modelBytesFloat
-    },
-    {
-      label: 'float 本地分片',
-      timeoutMs: 60_000,
-      parts: PIPER_VOICE.modelPartsLocal,
-      totalBytes: PIPER_VOICE.modelBytesFloat
-    },
-    { label: 'int8 量化', timeoutMs: 60_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }
-  ];
+  const mobile = isMobileDevice();
+  if (mobile) {
+    console.info('[piper] 移动端设备：使用 int8 小模型（float 60MB 在手机端下载慢、会话创建易超时）');
+  }
+  // 桌面音质优先：float 分片（jsDelivr，快且无损）→ 本地分片 → int8。
+  // 移动端：int8 小模型为主。失败逐个继续；最后一个失败才整体放弃。
+  const candidates: ModelCandidate[] = mobile
+    ? [{ label: 'int8 量化', timeoutMs: 90_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }]
+    : [
+        {
+          label: 'float CDN 分片',
+          timeoutMs: 90_000,
+          parts: PIPER_VOICE.modelPartsExternal,
+          totalBytes: PIPER_VOICE.modelBytesFloat
+        },
+        {
+          label: 'float 本地分片',
+          timeoutMs: 60_000,
+          parts: PIPER_VOICE.modelPartsLocal,
+          totalBytes: PIPER_VOICE.modelBytesFloat
+        },
+        { label: 'int8 量化', timeoutMs: 60_000, url: PIPER_VOICE.modelPath, knownBytes: PIPER_VOICE.modelBytes }
+      ];
   let lastErr: unknown = null;
   for (const [i, cand] of candidates.entries()) {
     try {
@@ -227,10 +243,18 @@ async function createSession(
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
       // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
       // 传错会在 create 时直接抛 "unsupported graph optimization level"）
-      const session = await ort.InferenceSession.create(modelBytes, {
-        executionProviders: ['wasm'],
-        graphOptimizationLevel: 'disabled'
-      });
+      const session = await Promise.race([
+        ort.InferenceSession.create(modelBytes, {
+          executionProviders: ['wasm'],
+          graphOptimizationLevel: 'disabled'
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`会话创建超时（${cand.label}，${CREATE_TIMEOUT_MS / 1000}s）`)),
+            CREATE_TIMEOUT_MS
+          )
+        )
+      ]);
       console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz）`);
       return { session, config };
     } catch (e) {
