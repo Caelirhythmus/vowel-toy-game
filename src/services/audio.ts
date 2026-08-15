@@ -80,16 +80,25 @@ export const speechService: SpeechService = {
     // 1) Piper 已就绪 → 神经合成（高质量）
     if (getPiperStatus() === 'ready') {
       const wav = await synthPiperWord(word);
-      if (wav && wav.length > 44 && playWavBytes(wav)) return true;
+      if (wav && wav.length > 44 && playWavBytes(wav)) {
+        console.info('[audio] 播放引擎：Piper 神经合成');
+        return true;
+      }
     }
     // 2) espeak 已加载过 → 离线共振峰合成
     if (getEspeakReady()) {
       const wav2 = await synthWord(word);
-      if (wav2 && wav2.length > 44 && playWavBytes(wav2)) return true;
+      if (wav2 && wav2.length > 44 && playWavBytes(wav2)) {
+        console.info('[audio] 播放引擎：espeak-ng');
+        return true;
+      }
     }
     // 3) 立即用浏览器 TTS 近似朗读（零等待；不再朗读含 ˈ/IPA 的原文）
     const tts = wordToTtsText(word);
-    if (tts) this.speak(tts);
+    if (tts) {
+      console.info('[audio] 播放引擎：浏览器 TTS（近似）');
+      this.speak(tts);
+    }
     // 后台继续加载未就绪引擎，下次点击自动升级为更高质量
     void warmupPiper();
     warmupEspeak();

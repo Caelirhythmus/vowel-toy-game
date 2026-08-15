@@ -78,7 +78,7 @@ export const PIPER_VOICE = {
    * 加载顺序：外部 int8（45s）→ 本地 int8（60s）→ float（仅 int8 404 时）。
    * ?v=2 为缓存破坏版本号（模型内容变更时 +1）。
    */
-  modelUrlExternal: 'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.int8.onnx?v=2',
+  modelUrlExternal: 'https://cdn.jsdelivr.net/gh/Caelirhythmus/vowel-toy-game@main/public/vendor/piper/en_US-joe-medium.int8.onnx?v=3',
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelPathFloat: 'vendor/piper/en_US-joe-medium.onnx',
