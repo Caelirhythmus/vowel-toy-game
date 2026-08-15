@@ -1,0 +1,139 @@
+/* ============================================================
+ * core：i18n（类型安全的中英文案字典 + 插值）
+ * ============================================================ */
+import type { Lang } from './types';
+
+export const zh = {
+  'app.title': '元音演变实验室',
+  'app.subtitle': '认识常见元音演变类型 · 判断其跨语言频率 · 预测系统层面的变化',
+  'set.mode': '题型',
+  'set.difficulty': '难度',
+  'set.time': '时长',
+  'mode.mixed': '混合',
+  'mode.type': '类型判断',
+  'mode.freq': '频率判断',
+  'mode.system': '系统预测',
+  'diff.easy': '入门（仅典型演变）',
+  'diff.hard': '进阶（全部规则）',
+  'time.unlimited': '不限时',
+  'time.30': '30 秒',
+  'time.60': '60 秒',
+  'time.90': '90 秒',
+  'time.120': '120 秒',
+  'btn.start': '开始',
+  'btn.reset': '重置',
+  'btn.submit': '提交',
+  'btn.close': '关闭',
+  'btn.speak': '发音',
+  'timer.left': '剩余时间',
+  'q.type.prompt': '这一变化属于哪种演变类型？',
+  'q.freq.prompt': '这一方向在跨语言中常见吗？（“典型/偶见/罕见”为粗略频率，非定律）',
+  'q.system.prompt': '下列词将经历规则「{rule}」。请选出会发生变化的词。',
+  'q.env': '环境',
+  'q.env.none': '无特殊环境',
+  'fb.correct': '正确！',
+  'fb.wrong': '不正确，再试一次（同一题）。',
+  'fb.answer': '正确答案',
+  'fb.your': '你的选择',
+  'fb.type': '类型',
+  'fb.tier': '频率',
+  'fb.desc': '说明',
+  'fb.example': '实例',
+  'fb.note': '提示',
+  'fb.changed': '发生变化',
+  'fb.unchanged': '未变化',
+  'stat.correct': '正确',
+  'stat.incorrect': '错误',
+  'stat.total': '已答',
+  'stat.streak': '连对',
+  'chart.title': '元音图（高度 × 前后 × 圆唇）',
+  'chart.a': 'A 起点',
+  'chart.b': 'B 终点',
+  'info.model': '模型说明（本游戏的简化与局限）',
+  'info.model.l1': '元音音质是多维的：舌位高低、舌位前后、圆唇、长短……本游戏用特征向量建模并展示二维元音图。',
+  'info.model.l2': '“典型 / 偶见 / 罕见”是本游戏对跨语言频率的粗略分级，不是定律。真实语言中低化、央化、复元音化同样常见。',
+  'info.model.l3': '真实音变作用于音系系统（同环境同变），并受重音、邻接音、词汇扩散、语言接触等影响——本游戏是教学简化。',
+  'info.model.l4': '音标均按 IPA 理解：[a] 为前开元音，与 [ɑ]（后开）不同。',
+  'info.types': '演变类型速查',
+  'end.title': '时间到！',
+  'end.stats': '最终统计',
+  'end.mistakes': '错题回顾',
+  'end.none': '没有错题 🎉',
+  'end.bestStreak': '最高连对',
+  'refs.title': '参考资料 · References'
+} as const;
+
+export type I18nKey = keyof typeof zh;
+
+export const en: Record<I18nKey, string> = {
+  'app.title': 'Vowel Change Lab',
+  'app.subtitle': 'Learn common vowel change types — judge their frequency and predict system-wide changes',
+  'set.mode': 'Question type',
+  'set.difficulty': 'Difficulty',
+  'set.time': 'Time',
+  'mode.mixed': 'Mixed',
+  'mode.type': 'Type',
+  'mode.freq': 'Frequency',
+  'mode.system': 'System',
+  'diff.easy': 'Beginner (typical only)',
+  'diff.hard': 'Advanced (all rules)',
+  'time.unlimited': 'Unlimited',
+  'time.30': '30 s',
+  'time.60': '60 s',
+  'time.90': '90 s',
+  'time.120': '120 s',
+  'btn.start': 'Start',
+  'btn.reset': 'Reset',
+  'btn.submit': 'Submit',
+  'btn.close': 'Close',
+  'btn.speak': 'Speak',
+  'timer.left': 'Time left',
+  'q.type.prompt': 'Which type of change is this?',
+  'q.freq.prompt': 'How common is this direction cross-linguistically? (a rough typological estimate, not a law)',
+  'q.system.prompt': 'The following words undergo “{rule}”. Select the ones that change.',
+  'q.env': 'Environment',
+  'q.env.none': 'no special environment',
+  'fb.correct': 'Correct!',
+  'fb.wrong': 'Not quite — try again (same question).',
+  'fb.answer': 'Correct answer',
+  'fb.your': 'Your pick',
+  'fb.type': 'Type',
+  'fb.tier': 'Frequency',
+  'fb.desc': 'Explanation',
+  'fb.example': 'Example',
+  'fb.note': 'Note',
+  'fb.changed': 'Changed',
+  'fb.unchanged': 'Unchanged',
+  'stat.correct': 'Correct',
+  'stat.incorrect': 'Wrong',
+  'stat.total': 'Answered',
+  'stat.streak': 'Streak',
+  'chart.title': 'Vowel chart (height × backness × rounding)',
+  'chart.a': 'A source',
+  'chart.b': 'B target',
+  'info.model': 'Model notes (simplifications & limits)',
+  'info.model.l1': 'Vowel quality is multidimensional: height, backness, rounding, length… This game models vowels as feature vectors on a 2-D chart.',
+  'info.model.l2': '“Typical / occasional / rare” is a rough typological scale, not a law. Lowering, reduction and diphthongization are all real and common.',
+  'info.model.l3': 'Real sound change applies to the whole system (same change in the same environment), conditioned by stress, neighboring sounds, lexical diffusion, contact — this game is a teaching simplification.',
+  'info.model.l4': 'Symbols are IPA: [a] is front open, distinct from [ɑ] (back open).',
+  'info.types': 'Change type cheat sheet',
+  'end.title': "Time's up!",
+  'end.stats': 'Final statistics',
+  'end.mistakes': 'Mistake review',
+  'end.none': 'No mistakes 🎉',
+  'end.bestStreak': 'Best streak',
+  'refs.title': 'References'
+};
+
+const DICTS: Record<Lang, Record<I18nKey, string>> = { zh, en };
+
+/** 取文案，支持 {var} 插值 */
+export function t(key: I18nKey, lang: Lang, vars?: Record<string, string | number>): string {
+  let s = DICTS[lang][key] ?? zh[key];
+  if (vars) {
+    for (const k of Object.keys(vars)) {
+      s = s.split('{' + k + '}').join(String(vars[k]));
+    }
+  }
+  return s;
+}

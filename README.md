@@ -1,7 +1,7 @@
 # 元音演变实验室 · Vowel Change Lab
 
-> 一个以语音学事实为基础的元音演变学习小游戏（原 “Vowel Change Inference Game” 的方案 B 重构版）。
-> 零构建、零依赖的纯静态页面，可双击 `index.html` 直接运行，也可部署到 GitHub Pages。
+> 一个以语音学事实为基础的元音演变学习小游戏（原 “Vowel Change Inference Game” 的长期产品化重构版）。
+> 技术栈：**Vue 3（组合式 API）+ TypeScript + Vite + Vitest**，内容与引擎解耦、可配置化、零后端纯静态部署。
 
 ## 功能
 
@@ -13,8 +13,69 @@
 - **9 条声明式演变规则**：每条带真实语言实例（英语元音大推移、日耳曼 i-umlaut / a-mutation、俄语 аканье、汉语方言高元音复化等）与粗略频率档
 - **环境条件**：重音位置、邻接元音、元音长短都会影响规则是否触发
 - **教学反馈**：答对后展示类型、频率、说明与实例卡片；答错保留原题重试
-- **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾
-- **可访问性**：`aria-live` 反馈、键盘操作、Esc 关闭弹窗、`prefers-reduced-motion`
+- **发音播放**：浏览器 Speech Synthesis 朗读词形（服务适配器实现，可替换为 espeak-ng WASM / 预录音频）
+- **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计
+- **可访问性**：`aria-live` 反馈、键盘操作、Esc 关闭弹窗、焦点管理、`prefers-reduced-motion`
+
+## 架构（可配置化 · 去耦合化 · 框架化）
+
+```
+src/
+├── config/          # 内容配置层：元音库 / 演变规则表 / 游戏参数（改内容不动引擎）
+│   ├── vowels.ts    #   IPA 单元音、复元音、词生成元音池
+│   ├── rules.ts     #   演变规则（类型/频率/环境/示例/transform）
+│   ├── game.ts      #   题型/难度/时长选项、规则权重、混合比例
+│   └── schema.ts    #   zod 内容校验（开发期警告 + 测试守护）
+├── core/            # 领域逻辑层（纯 TS、零 DOM/框架依赖、Node 可测）
+│   ├── types.ts     #   领域类型（Vowel/Word/Rule/Question/GameState…）
+│   ├── vowels.ts    #   元音特征解析与构造
+│   ├── words.ts     #   CVCV 词形生成与显示
+│   ├── rules.ts     #   规则引擎（环境匹配/可应用/变换）
+│   ├── questions.ts #   三类题型生成器（含系统题兜底）
+│   ├── state.ts     #   游戏状态机（时间注入，纯函数）
+│   └── i18n.ts      #   类型安全的中英文案字典 + 插值
+├── services/        # 端口与适配器（副作用隔离）
+│   ├── storage.ts   #   localStorage 适配（隐私模式降级内存）
+│   └── audio.ts     #   语音服务（SpeechSynthesis，可替换实现）
+├── composables/     # 编排层（Vue 响应式接线）
+│   ├── useGame.ts   #   单例游戏 store：状态/计时/自动下一题/持久化
+│   └── useI18n.ts   #   语言状态 + 文案取用
+├── components/      # 视图层（SFC）
+│   ├── SettingsPanel / TimerBar / QuestionArea / OptionsPanel
+│   ├── FeedbackCard / StatsBar / VowelChart / CheatSheet
+│   ├── ModelNotes / GameOverModal / LangToggle
+├── App.vue
+└── main.ts          # 入口（DEV 下执行内容校验）
+tests/               # Vitest：core 逻辑 / 配置 schema / 组件渲染
+```
+
+**分层原则**：
+
+- `core/` 不依赖 Vue/DOM/存储——全部纯函数，时间用参数注入，可直接在 Node 中测试
+- 内容（`config/`）与引擎（`core/`）解耦：加一条规则 = 改 `rules.ts` 一行配置，schema 校验 + 不变量测试守门
+- 副作用（存储、语音、计时）全部收敛到 `services/` 与 `composables/`，视图层只消费响应式状态
+- 未来扩展（链移玩法、音频、题库编辑器）只动对应层，不破坏既有分层
+
+## 开发
+
+```bash
+npm install          # 安装依赖
+npm run dev          # 开发服务器（Vite HMR）
+npm run test         # Vitest 单测（core + schema + 组件）
+npm run typecheck    # vue-tsc 全量类型检查
+npm run build        # 类型检查 + 生产构建（dist/）
+npm run preview      # 本地预览构建产物
+```
+
+## 测试
+
+`npm run test`（28 项）覆盖：
+
+- 规则应用正确性（9 条规则构造用例：环境匹配、长元音保持、边界不适用）
+- 题型生成不变量（无 A==B、系统题必有变化与未变化词、答案与计算一致）
+- 状态机（答错扣时/保留原题、答对推进、超时结束、错题本）
+- 内容配置 schema（重复 id / 非法 tier / 空示例 / 元音池）
+- 组件渲染（VowelChart 高亮与复元音定位、FeedbackCard 对错反馈）
 
 ## 语音学模型与局限
 
@@ -25,49 +86,14 @@
 - 真实音变作用于整个音系系统，并受重音、邻接音、词汇扩散、语言接触等影响
 - 音标均按 IPA 理解：`[a]` 为前开元音，与 `[ɑ]`（后开）不同
 
-详细的语音学事实误区研究见 [`docs/phonetics-misconceptions-and-refactor.md`](docs/phonetics-misconceptions-and-refactor.md)。
+详细研究见：
 
-## 项目结构
-
-```
-├── index.html                  # 页面结构
-├── style.css                   # 样式（含 a11y / 响应式）
-├── js/
-│   ├── data.js                 # 数据层：元音特征模型、演变规则表、i18n 词条
-│   ├── core.js                 # 纯逻辑：词形生成、规则应用、三种题型生成（Node 可测）
-│   ├── state.js                # 状态机：idle → playing → answered → over，时间戳计时
-│   ├── ui.js                   # 渲染层：题目区、IPA 元音图、速查表、弹窗
-│   └── main.js                 # 引导层：事件绑定、计时循环
-├── scripts/
-│   └── smoke-test.js           # Node 冒烟测试（数据 / 规则 / 生成器 / 状态机 / i18n）
-├── docs/
-│   └── phonetics-misconceptions-and-refactor.md  # 语音学误区研究文档
-└── .github/workflows/deploy.yml # GitHub Pages 部署
-```
-
-浏览器通过经典 script 标签按序加载 `data → core → state → ui → main`，全部挂载在 `window.VL` 命名空间下，无构建步骤。
-
-## 本地运行
-
-```bash
-# 方式一：直接双击 index.html（无需服务器）
-# 方式二：任意静态服务器
-python -m http.server 8000
-# 或
-npx serve .
-```
-
-## 测试
-
-```bash
-node scripts/smoke-test.js
-```
-
-覆盖：数据完整性、9 条规则的应用正确性（构造用例）、题型生成不变量（无 A==B、系统题必有变化与未变化词）、状态机与扣时逻辑、i18n 键完整性。
+- [`docs/phonetics-misconceptions-and-refactor.md`](docs/phonetics-misconceptions-and-refactor.md) —— 语音学事实误区研究
+- [`docs/followup-analysis.md`](docs/followup-analysis.md) —— 后续跟进全量分析（路线图）
 
 ## 部署
 
-推送到 `main` 分支自动部署 GitHub Pages（`.github/workflows/deploy.yml`，纯静态上传，无需构建）。若手动启用 Pages，选择 “GitHub Actions” 作为部署源即可。
+推送到 `main` 分支自动：`npm ci` → `npm run test` → `npm run build` → 上传 `dist/` 到 GitHub Pages（`.github/workflows/deploy.yml`）。若手动启用 Pages，选择 “GitHub Actions” 作为部署源即可。
 
 ## 参考资料
 
