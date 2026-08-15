@@ -135,22 +135,35 @@ let sessionPromise: Promise<LoadedSession | null> | null = null;
 
 /** 并行下载多个分片并拼接（jsDelivr 单文件 ≤20MB，float 模型切成 4 片） */
 async function fetchParts(
-  urls: string[],
+  urls: readonly string[],
   totalBytes: number,
   timeoutMs: number,
   onProgress: ((pct: number | null) => void) | null
 ): Promise<Uint8Array> {
   const partBytes = Math.ceil(totalBytes / urls.length);
-  let received = 0;
+  // 每个分片独立记录“已读字节”，聚合时求和——避免各分片进度互相覆盖
+  // 导致数字来回跳动；完成时用精确字节数覆盖。
+  const perPart = new Array<number>(urls.length).fill(0);
+  let lastPct = -1;
+  const emit = () => {
+    if (!onProgress) return;
+    const pct = Math.min(
+      100,
+      Math.round((perPart.reduce((a, b) => a + b, 0) / totalBytes) * 100)
+    );
+    if (pct !== lastPct) {
+      lastPct = pct;
+      onProgress(pct);
+    }
+  };
   const chunks = await Promise.all(
-    urls.map((url, _i) =>
+    urls.map((url, i) =>
       fetchWithProgress(url, partBytes, timeoutMs, (pct) => {
-        // 聚合进度：已完成分片字节 + 当前分片内进度
-        onProgress?.(
-          Math.min(100, Math.round(((received + ((pct ?? 0) / 100) * partBytes) / totalBytes) * 100))
-        );
+        perPart[i] = ((pct ?? 0) / 100) * partBytes;
+        emit();
       }).then((bytes) => {
-        received += bytes.length;
+        perPart[i] = bytes.length;
+        emit();
         return bytes;
       })
     )
