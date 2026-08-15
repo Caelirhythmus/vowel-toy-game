@@ -1,6 +1,24 @@
 /* ============================================================
  * 元音演变实验室 · 全局样式（迁移自旧 style.css）
  * ============================================================ */
+/* 自托管 IPA 字体（Charis SIL，SIL OFL 许可，见 public/fonts/OFL.txt；
+ * 按本项目所需字形子集化，消除跨平台 IPA 渲染差异） */
+@font-face {
+  font-family: 'Charis SIL';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/charis-sil-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Charis SIL';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/charis-sil-italic.woff2') format('woff2');
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -247,7 +265,7 @@ select {
   font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: 2px;
-  font-family: 'Segoe UI', 'DejaVu Sans', 'Charis SIL', 'Gentium Plus', 'Arial Unicode MS', sans-serif;
+  font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', 'Arial Unicode MS', sans-serif;
   word-break: break-all;
 }
 
@@ -259,7 +277,7 @@ select {
 
 /* ---------- IPA 元音图 ---------- */
 .chart-wrap {
-  max-width: 460px;
+  max-width: 480px;
   margin: 0 auto 18px;
   text-align: center;
   background: #fbfcfe;
@@ -268,17 +286,99 @@ select {
   padding: 12px 12px 8px;
 }
 
-.chart-title {
-  font-size: 0.95rem;
-  color: #182848;
+.chart-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 6px;
 }
 
-#chart svg,
-.chart-wrap svg {
+.chart-title {
+  font-size: 0.95rem;
+  color: #182848;
+}
+
+.chart-views {
+  display: inline-flex;
+  border: 1px solid #4b6cb7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.chart-view-btn {
+  border: none;
+  background: #f0f4ff;
+  color: #4b6cb7;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.chart-view-btn.active {
+  background: #4b6cb7;
+  color: #fff;
+}
+
+.chart-svg-wrap {
+  position: relative;
+}
+
+.chart-svg-wrap svg {
   width: 100%;
   height: auto;
   display: block;
+}
+
+.chart-svg-wrap svg text {
+  font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', 'Arial Unicode MS', sans-serif;
+}
+
+.chart-tip {
+  position: absolute;
+  transform: translate(-50%, -145%);
+  background: #182848;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  max-width: 240px;
+}
+
+/* A→B 路径描画动画（遵 reduced-motion） */
+.path-anim {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawPath 0.9s ease-out forwards;
+}
+
+@keyframes drawPath {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* B 目标脉冲 */
+.b-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 
 .chart-legend {
@@ -306,6 +406,16 @@ select {
 .dot-b {
   background: #e74c3c;
   border: 2px solid #b03a2e;
+}
+
+.dot-source {
+  background: #27ae60;
+  border: 2px solid #1e7d3c;
+}
+
+.dot-target {
+  background: transparent;
+  border: 2px dashed #2980b9;
 }
 
 /* ---------- 选项 ---------- */
@@ -351,7 +461,7 @@ select {
   min-width: 130px;
   font-size: 1.15rem;
   letter-spacing: 1px;
-  font-family: 'Segoe UI', 'DejaVu Sans', 'Charis SIL', 'Gentium Plus', sans-serif;
+  font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', sans-serif;
 }
 
 /* ---------- 反馈 ---------- */
@@ -421,6 +531,7 @@ select {
 .example-card .ex-text {
   font-weight: 700;
   font-size: 1.05rem;
+  font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', sans-serif;
 }
 
 .example-card .ex-src {
@@ -593,6 +704,15 @@ select {
   * {
     transition: none !important;
     animation: none !important;
+  }
+
+  .path-anim {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .b-pulse {
+    animation: none;
   }
 }
 

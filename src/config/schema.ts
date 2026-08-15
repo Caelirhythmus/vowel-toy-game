@@ -4,7 +4,7 @@
  * ============================================================ */
 import { z } from 'zod';
 import { RULES } from '@/config/rules';
-import { MONOPHTHONGS, DIPHTHONGS, VOWEL_POOL, LONG_PROB } from '@/config/vowels';
+import { MONOPHTHONGS, DIPHTHONGS, VOWEL_POOL, LONG_PROB, FORMANT_ESTIMATES } from '@/config/vowels';
 import { CHANGE_TYPE_IDS, TIER_IDS } from '@/config/game';
 import type { Rule } from '@/core/types';
 
@@ -58,7 +58,8 @@ export function validateRules(rules: Rule[] = RULES): ContentIssue[] {
   return issues;
 }
 
-/** 校验元音池：符号必须可解析、权重为正、长元音概率在 (0,1) */
+/** 校验元音池：符号必须可解析、权重为正、长元音概率在 (0,1)、
+ *  每个单元音有共振峰估值、每个复元音有标签偏移 */
 export function validateVowels(): ContentIssue[] {
   const issues: ContentIssue[] = [];
   const pool = vowelPoolSchema.safeParse(VOWEL_POOL);
@@ -72,6 +73,18 @@ export function validateVowels(): ContentIssue[] {
   });
   if (!(LONG_PROB > 0 && LONG_PROB < 1)) {
     issues.push({ path: 'vowels.longProb', message: 'LONG_PROB 必须在 (0,1)' });
+  }
+  for (const key of Object.keys(MONOPHTHONGS)) {
+    const est = FORMANT_ESTIMATES[key];
+    if (!est || !(est.f1 > 0) || !(est.f2 > 0)) {
+      issues.push({ path: `vowels.formants[${key}]`, message: '缺少合法共振峰估值' });
+    }
+  }
+  for (const key of Object.keys(DIPHTHONGS)) {
+    const d = DIPHTHONGS[key];
+    if (!d.labelOffset || typeof d.labelOffset.dx !== 'number' || typeof d.labelOffset.dy !== 'number') {
+      issues.push({ path: `vowels.diph[${key}]`, message: '缺少 labelOffset' });
+    }
   }
   return issues;
 }

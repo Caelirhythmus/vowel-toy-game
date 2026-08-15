@@ -61,4 +61,57 @@ describe('VowelChart', () => {
     expect(texts).toContain('前');
     expect(texts).toContain('后');
   });
+
+  it('悬停元音显示特征卡', async () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const dotI = wrapper.findAll('g[role="button"]').find((g) => g.text().includes('i'));
+    expect(dotI).toBeDefined();
+    await dotI!.trigger('mouseenter');
+    expect(wrapper.find('.chart-tip').exists()).toBe(true);
+    expect(wrapper.find('.chart-tip').text()).toContain('前');
+    expect(wrapper.find('.chart-tip').text()).toContain('闭');
+    await dotI!.trigger('mouseleave');
+    expect(wrapper.find('.chart-tip').exists()).toBe(false);
+  });
+
+  it('元音点带读屏 aria-label（符号+特征+朗读提示）', () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const dotI = wrapper.findAll('g[role="button"]').find((g) => g.text().includes('i'));
+    expect(dotI!.attributes('aria-label')).toContain('前');
+    expect(dotI!.attributes('aria-label')).toContain('闭');
+    expect(dotI!.attributes('aria-label')).toContain('点击朗读');
+  });
+
+  it('切换到共振峰图：出现 F1/F2 轴标注', async () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const acousticBtn = wrapper.findAll('.chart-view-btn').find((b) => b.text().includes('共振峰'));
+    await acousticBtn!.trigger('click');
+    const texts = wrapper.findAll('text').map((t) => t.text());
+    expect(texts).toContain('F1 (Hz)');
+    expect(texts).toContain('F2 (Hz)');
+    expect(wrapper.find('rect').exists()).toBe(true);
+  });
+
+  it('diff 视图：变化源绿色、变化结果虚线空心、其余淡化', () => {
+    const wrapper = mount(VowelChart, {
+      props: { a: null, b: null, diff: { sources: ['a'], targets: ['æ'] } }
+    });
+    expect(wrapper.find('circle[fill="#27ae60"]').exists()).toBe(true); // 源
+    expect(wrapper.find('circle[stroke="#2980b9"]').exists()).toBe(true); // 目标
+    expect(wrapper.findAll('circle[opacity="0.3"]').length).toBeGreaterThan(0); // 淡化
+    const legend = wrapper.find('.chart-legend').text();
+    expect(legend).toContain('变化源');
+    expect(legend).toContain('变化结果');
+  });
+
+  it('路径动画元素存在（pathLength=1 + path-anim class）', () => {
+    const wrapper = mount(VowelChart, {
+      props: { a: V('a'), b: V('æ'), animKey: 'a→æ' }
+    });
+    const line = wrapper.find('line.path-anim');
+    expect(line.exists()).toBe(true);
+    const pl = line.attributes('pathlength') ?? line.attributes('pathLength');
+    expect(pl).toBe('1');
+    expect(wrapper.find('circle.b-pulse').exists()).toBe(true);
+  });
 });

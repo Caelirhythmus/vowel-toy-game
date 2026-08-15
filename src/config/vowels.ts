@@ -47,5 +47,25 @@ export const VOWEL_POOL: VowelPoolEntry[] = [
 /** 长元音概率 */
 export const LONG_PROB = 0.35;
 
+/**
+ * 共振峰经验估值（男性参考值，教学简化）：F1 与舌位高低相关，F2 与前后/圆唇相关。
+ * 用于“声学图（F1×F2）”视图，与发音部位图并置展示“开口度≠元音全部”。
+ */
+export const FORMANT_ESTIMATES: Record<string, { f1: number; f2: number }> = {
+  i: { f1: 300, f2: 2300 },
+  y: { f1: 300, f2: 1900 },
+  e: { f1: 400, f2: 2050 },
+  ø: { f1: 400, f2: 1650 },
+  ɛ: { f1: 550, f2: 1750 },
+  œ: { f1: 550, f2: 1400 },
+  æ: { f1: 650, f2: 1650 },
+  a: { f1: 800, f2: 1350 },
+  ɑ: { f1: 750, f2: 1100 },
+  ɔ: { f1: 550, f2: 900 },
+  o: { f1: 450, f2: 850 },
+  u: { f1: 320, f2: 870 },
+  ə: { f1: 500, f2: 1500 }
+};
+
 /** 辅音（词生成用） */
 export const CONSONANTS = ['b', 'p', 'm', 'd', 't', 'n', 'h', 'g', 'k'] as const;
