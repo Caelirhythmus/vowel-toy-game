@@ -3,12 +3,14 @@
  * 单例：模块级 ref，把 piper 加载状态/进度暴露给 UI（按钮提示）
  * ============================================================ */
 import { ref } from 'vue';
-import { onPiperStatus, type PiperStatus } from '@/services/piper';
+import { getPiperError, onPiperStatus, type PiperStatus } from '@/services/piper';
 import { speechService } from '@/services/audio';
 
 const status = ref<PiperStatus>('idle');
 /** 下载进度百分比（0-100）；未知或非下载阶段为 null */
 const progress = ref<number | null>(null);
+/** 加载失败原因（status === 'error' 时非空） */
+const error = ref<string | null>(null);
 let subscribed = false;
 
 function ensureSubscribed() {
@@ -17,6 +19,7 @@ function ensureSubscribed() {
   onPiperStatus((s, pct) => {
     status.value = s;
     progress.value = s === 'loading' ? (pct ?? null) : null;
+    if (s === 'error') error.value = getPiperError();
   });
 }
 
@@ -28,5 +31,5 @@ export function useSpeech() {
     speechService.warmup();
   }
 
-  return { status, progress, warmup };
+  return { status, progress, error, warmup };
 }

@@ -45,15 +45,17 @@ function vendorUrl(relPath: string): string {
   return new URL(`${import.meta.env.BASE_URL}${relPath}`, document.baseURI).href;
 }
 
-/** 带超时与进度回调的下载（content-length 缺失时 progress 为 null） */
+/** 带超时与进度回调的下载；进度基于已知模型字节数（content-length 可能
+ *  因服务器 gzip 压缩/分块传输而失真——GH Pages 对 .onnx 动态 gzip 时
+ *  content-length 是压缩后大小，而流读到的字节是解压后大小，比例会超 100%） */
 async function fetchWithProgress(
   url: string,
+  knownBytes: number,
   timeoutMs: number,
   onProgress: ((pct: number | null) => void) | null
 ): Promise<Uint8Array> {
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`HTTP ${res.status}（${url}）`);
-  const total = Number(res.headers.get('content-length') ?? 0);
   if (!res.body) return new Uint8Array(await res.arrayBuffer());
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -64,7 +66,7 @@ async function fetchWithProgress(
     if (value) {
       chunks.push(value);
       received += value.length;
-      onProgress?.(total > 0 ? Math.round((received / total) * 100) : null);
+      onProgress?.(knownBytes > 0 ? Math.min(100, Math.round((received / knownBytes) * 100)) : null);
     }
   }
   const out = new Uint8Array(received);
@@ -104,10 +106,16 @@ interface LoadedSession {
 export type PiperStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 let piperStatus: PiperStatus = 'idle';
+let lastError: string | null = null;
 const statusListeners = new Set<(s: PiperStatus, progress?: number | null) => void>();
 
 export function getPiperStatus(): PiperStatus {
   return piperStatus;
+}
+
+/** 最近一次加载失败的原因（供 UI/诊断） */
+export function getPiperError(): string | null {
+  return lastError;
 }
 
 /** 订阅加载状态（progress 仅 loading 阶段推送：0-100 或 null=未知）；返回取消订阅函数 */
@@ -129,16 +137,16 @@ let sessionPromise: Promise<LoadedSession | null> | null = null;
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
-  const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 15_000, null);
+  const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
-  // int8 是主路径（小、快）；float 仅在 int8 缺失/失败时尝试（慢网络下
-  // 120s 超时即放弃，降级 espeak，避免无限等待）
-  for (const [path, label, timeoutMs] of [
-    [PIPER_VOICE.modelPath, 'int8 量化', 90_000],
-    [PIPER_VOICE.modelPathFloat, 'float 原版', 120_000]
+  // int8 是主路径（小、快）；float 仅在 int8 缺失/失败时尝试（下载 60MB，
+  // 慢网络下 60s 超时即放弃，降级 espeak，避免无限等待）
+  for (const [path, label, knownBytes, timeoutMs] of [
+    [PIPER_VOICE.modelPath, 'int8 量化', PIPER_VOICE.modelBytes, 90_000],
+    [PIPER_VOICE.modelPathFloat, 'float 原版', PIPER_VOICE.modelBytesFloat, 60_000]
   ] as const) {
     try {
-      const modelBytes = await fetchWithProgress(vendorUrl(path), timeoutMs, (pct) =>
+      const modelBytes = await fetchWithProgress(vendorUrl(path), knownBytes, timeoutMs, (pct) =>
         setStatus('loading', pct)
       );
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用
@@ -166,6 +174,7 @@ function loadSession(): Promise<LoadedSession | null> {
         return { ort, ...loaded };
       } catch (e) {
         // 主引擎失败不静默：上层回退 espeak
+        lastError = (e as Error).message;
         setStatus('error');
         console.warn('[piper] 加载失败，将回退 espeak-ng 合成：', e);
         return null;
