@@ -28,7 +28,7 @@ interface OrtApi {
   InferenceSession: {
     create(
       model: Uint8Array,
-      opts: { executionProviders: string[]; graphOptimizationLevel: 'disable' }
+      opts: { executionProviders: string[]; graphOptimizationLevel: 'disabled' | 'basic' | 'extended' | 'all' }
     ): Promise<OrtSession>;
   };
   Tensor: new (type: string, data: Float32Array | BigInt64Array, dims: number[]) => OrtTensor;
@@ -159,10 +159,12 @@ async function createSession(
       const modelBytes = await fetchWithProgress(modelUrl(cand.url), cand.knownBytes, cand.timeoutMs, (pct) =>
         setStatus('loading', pct)
       );
-      // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用
+      // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
+      // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
+      // 传错会在 create 时直接抛 "unsupported graph optimization level"）
       const session = await ort.InferenceSession.create(modelBytes, {
         executionProviders: ['wasm'],
-        graphOptimizationLevel: 'disable'
+        graphOptimizationLevel: 'disabled'
       });
       console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz）`);
       return { session, config };
