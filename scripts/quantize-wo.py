@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""weight-only per-tensor QDQ 量化：Conv/MatMul/ConvTranspose 权重 int8。
+"""weight-only QDQ 量化：Conv/MatMul/ConvTranspose 权重 int8（非对称，per-tensor）。
 
-- per-tensor 对称量化 + 99.9% 分位数裁剪（wasm 的 DequantizeLinear 只支持
-  per-tensor；分位数裁剪避免异常极值拉大量化步长，精度接近 per-channel）
+- 非对称量化（zero_point 非零）：利用完整 [-128,127] 范围，比对称量化精度高
+- per-tensor（wasm 的 DequantizeLinear 不支持 per-channel——实测 run 崩溃）
 - 图里只新增 DequantizeLinear 节点（onnxruntime-web wasm 确定支持；
   onnxruntime 自带 quantize_dynamic 会融合出 ConvInteger——wasm 无实现）
 
@@ -13,8 +13,6 @@ import sys
 import onnx
 import numpy as np
 from onnx import numpy_helper, helper
-
-PERCENTILE = 99.9
 
 
 def main() -> None:
@@ -31,16 +29,22 @@ def main() -> None:
     quantized = set()
 
     def quantize_weight(name: str, arr: np.ndarray) -> str:
-        # 99.9% 分位数作为量化范围（容忍少量离群权重）
-        bound = float(np.percentile(np.abs(arr), PERCENTILE))
-        scale = max(bound, 1e-6) / 127.0
-        wq = np.clip(np.round(arr / scale), -128, 127).astype(np.int8)
+        # 非对称 per-tensor：min/max → [-128,127]（zp 取整到 int8）
+        lo = float(np.min(arr))
+        hi = float(np.max(arr))
+        if hi - lo < 1e-8:
+            scale = 1e-6
+            zp = np.int8(0)
+        else:
+            scale = (hi - lo) / 255.0
+            zp = np.int8(np.clip(round(-lo / scale - 128), -128, 127))
+        wq = np.clip(np.round(arr / scale + zp), -128, 127).astype(np.int8)
         wq_name = name + '_wq'
         scale_name = name + '_scale'
         zp_name = name + '_zp'
         new_inits.append(numpy_helper.from_array(wq, wq_name))
         new_inits.append(numpy_helper.from_array(np.float32(scale), scale_name))
-        new_inits.append(numpy_helper.from_array(np.int8(0), zp_name))
+        new_inits.append(numpy_helper.from_array(zp, zp_name))
         dq = helper.make_node(
             'DequantizeLinear', [wq_name, scale_name, zp_name], [name + '_dq'], name=name + '_DQ'
         )
@@ -66,7 +70,7 @@ def main() -> None:
 
     onnx.checker.check_model(model)
     onnx.save(model, dst)
-    print(f'[quantize-wo] {len(quantized)} 个权重 per-tensor({PERCENTILE}% 裁剪) int8 量化完成: {dst}')
+    print(f'[quantize-wo] {len(quantized)} 个权重 per-tensor 非对称 int8 量化完成: {dst}')
 
 
 if __name__ == '__main__':
