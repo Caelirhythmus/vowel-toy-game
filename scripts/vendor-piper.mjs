@@ -82,8 +82,9 @@ for (const [file, label] of [
   }
 }
 
-/* ---------- 3) int8 动态量化（60MB → 18MB，首次加载快 70%） ---------- */
-// 需要 python3/python + onnxruntime + onnx；不可用时保留 float（服务端会自动回退）
+/* ---------- 3) weight-only QDQ 量化（60MB → ~16MB，首次加载快 70%） ---------- */
+// 需要 python3 + onnx + numpy；不可用时保留 float（服务端会自动回退）
+// 注意：用 scripts/quantize-wo.py 而非 onnxruntime.quantization（ConvInteger 兼容问题）
 const floatPath = join(piperDest, `${VOICE}.onnx`);
 const int8Path = join(piperDest, `${VOICE}.int8.onnx`);
 
@@ -105,11 +106,11 @@ async function quantizeToInt8(py) {
     return;
   }
   try {
-    await execFileAsync(py, ['-c', 'import onnxruntime, onnx'], { timeout: 15000 });
+    await execFileAsync(py, ['-c', 'import onnx, numpy'], { timeout: 15000 });
   } catch {
-    console.log('[vendor-piper] 安装量化依赖（onnxruntime + onnx）…');
+    console.log('[vendor-piper] 安装量化依赖（onnx + numpy）…');
     try {
-      await execFileAsync(py, ['-m', 'pip', 'install', '--quiet', 'onnxruntime', 'onnx'], {
+      await execFileAsync(py, ['-m', 'pip', 'install', '--quiet', 'onnx', 'numpy'], {
         timeout: 10 * 60 * 1000
       });
     } catch (e) {
@@ -117,13 +118,12 @@ async function quantizeToInt8(py) {
       return;
     }
   }
-  const script = [
-    'from onnxruntime.quantization import quantize_dynamic, QuantType',
-    `quantize_dynamic(${JSON.stringify(floatPath)}, ${JSON.stringify(int8Path)}, weight_type=QuantType.QInt8)`,
-    'print("quantized ok")'
-  ].join('\n');
+  // weight-only QDQ：Conv/MatMul/ConvTranspose 权重 int8 对称量化 + DequantizeLinear
+  // （不用 onnxruntime.quantization——它会把 QDQ 融合成 ConvInteger，wasm 无实现）
   try {
-    await execFileAsync(py, ['-c', script], { timeout: 15 * 60 * 1000 });
+    await execFileAsync(py, [join(root, 'scripts', 'quantize-wo.py'), floatPath, int8Path], {
+      timeout: 15 * 60 * 1000
+    });
     const { size } = await import('node:fs/promises').then((m) => m.stat(int8Path));
     console.log(`[vendor-piper] int8 量化完成：piper/${VOICE}.int8.onnx（${(size / 1048576).toFixed(1)}MB）`);
   } catch (e) {
