@@ -114,4 +114,27 @@ describe('VowelChart', () => {
     expect(pl).toBe('1');
     expect(wrapper.find('circle.b-pulse').exists()).toBe(true);
   });
+
+  it('元音图梯形上宽下窄（回归：曾画反为上窄下宽）', () => {
+    const wrapper = mount(VowelChart, { props: { a: null, b: null } });
+    const pts = wrapper
+      .find('polygon')
+      .attributes('points')!
+      .trim()
+      .split(/\s+/)
+      .map((p) => p.split(',').map(Number));
+    expect(pts).toHaveLength(4);
+    const topWidth = pts[1][0] - pts[0][0];
+    const bottomWidth = pts[2][0] - pts[3][0];
+    expect(topWidth).toBeGreaterThan(bottomWidth); // 宽边在上
+
+    // 闭元音应比开元音更靠外：i 比 a 靠左、u 比 ɑ 靠右
+    const dotX = (sym: string) => {
+      const g = wrapper.findAll('g[role="button"]').find((el) => el.text().trim() === sym);
+      expect(g).toBeDefined();
+      return Number(g!.find('circle').attributes('cx'));
+    };
+    expect(dotX('i')).toBeLessThan(dotX('a'));
+    expect(dotX('u')).toBeGreaterThan(dotX('ɑ'));
+  });
 });

@@ -36,8 +36,10 @@ function yF(h: number): number {
 }
 
 function xF(back: number, h: number): number {
-  const openX = [0.16, 0.5, 0.84][back] as number;
-  const closeX = [0.3, 0.5, 0.7][back] as number;
+  // IPA 元音图惯例：闭元音在上、开元音在下，梯形“上宽下窄”
+  // （闭元音 i/u 分居两外侧，开元音 a/ɑ 向内收拢）
+  const closeX = [0.16, 0.5, 0.84][back] as number;
+  const openX = [0.3, 0.5, 0.7][back] as number;
   return openX + (closeX - openX) * (h / 4);
 }
 
@@ -62,7 +64,8 @@ const px = (fx: number) => (fx * W).toFixed(1);
 const py = (fy: number) => (fy * H).toFixed(1);
 const P = (fx: number, fy: number) => `${px(fx)},${py(fy)}`;
 
-const trapezoid = `${P(0.3, 0.13)} ${P(0.7, 0.13)} ${P(0.84, 0.88)} ${P(0.16, 0.88)}`;
+/** 梯形底图顶点：左上→右上→右下→左下（上宽下窄，宽边在上） */
+const trapezoid = `${P(0.16, 0.13)} ${P(0.84, 0.13)} ${P(0.3, 0.88)} ${P(0.7, 0.88)}`;
 const rowHeights = [4, 3, 2, 0] as const;
 
 /* ---------- 数据 ---------- */
