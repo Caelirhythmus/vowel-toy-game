@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { symbolToPhonemeInput, vowelMnemonic, wordToPhonemeInput } from '@/core/espeak';
+import {
+  symbolToPhonemeInput,
+  symbolToTtsText,
+  vowelMnemonic,
+  wordToPhonemeInput,
+  wordToTtsText
+} from '@/core/espeak';
 import type { Word } from '@/core';
 
 const W = (v1: string, v2: string, stress: 0 | 1, v1long = false, v1diph = false): Word => ({
@@ -63,5 +69,60 @@ describe('symbolToPhonemeInput', () => {
   it('复元音/未知返回 null', () => {
     expect(symbolToPhonemeInput('aɪ')).toBeNull();
     expect(symbolToPhonemeInput('?')).toBeNull();
+  });
+});
+
+describe('TTS 兜底近似拼写（不读 IPA 原文，避免字母名误读）', () => {
+  const WC = (
+    c1: string,
+    c2: string,
+    v1: string,
+    v2: string,
+    stress: 0 | 1 = 0,
+    v1long = false,
+    v1diph = false
+  ): Word => ({
+    c: [c1, c2],
+    v: [{ s: v1, long: v1long, diph: v1diph }, { s: v2, long: false, diph: false }],
+    stress
+  });
+
+  it('symbolToTtsText：单元音与长音', () => {
+    expect(symbolToTtsText('i')).toBe('ee');
+    expect(symbolToTtsText('iː')).toBe('ee');
+    expect(symbolToTtsText('u')).toBe('oo');
+    expect(symbolToTtsText('ə')).toBe('uh');
+    expect(symbolToTtsText('ɑ')).toBe('ah');
+    expect(symbolToTtsText('ɔ')).toBe('aw');
+  });
+
+  it('symbolToTtsText：复元音', () => {
+    expect(symbolToTtsText('aɪ')).toBe('ai');
+    expect(symbolToTtsText('aʊ')).toBe('ow');
+    expect(symbolToTtsText('eɪ')).toBe('ay');
+    expect(symbolToTtsText('əʊ')).toBe('oh');
+  });
+
+  it('symbolToTtsText：未知返回 null', () => {
+    expect(symbolToTtsText('?')).toBeNull();
+  });
+
+  it('wordToTtsText：puˈbi → poobee（不含重音标记）', () => {
+    expect(wordToTtsText(WC('p', 'b', 'u', 'i', 0))).toBe('poobee');
+    expect(wordToTtsText(WC('p', 'b', 'u', 'i', 1))).toBe('poobee');
+  });
+
+  it('wordToTtsText：长元音与复元音', () => {
+    expect(wordToTtsText(WC('b', 't', 'i', 'a', 0, true))).toBe('beetah');
+    expect(wordToTtsText(WC('b', 't', 'aɪ', 'a', 0, false, true))).toBe('baitah');
+  });
+
+  it('wordToTtsText：未知元音返回 null', () => {
+    const bad: Word = {
+      c: ['b', 't'],
+      v: [{ s: '?', long: false, diph: false }, { s: 'a', long: false, diph: false }],
+      stress: 0
+    };
+    expect(wordToTtsText(bad)).toBeNull();
   });
 });

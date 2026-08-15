@@ -5,8 +5,8 @@
  * - 最后兜底：浏览器 Speech Synthesis（仅在录音缺失时）
  * ============================================================ */
 import type { Word } from '@/core';
-import { wordText } from '@/core';
 import { VOWEL_AUDIO } from '@/config/audio';
+import { symbolToTtsText, wordToTtsText } from '@/core/espeak';
 import { synthWord } from './espeak';
 
 export interface SpeechService {
@@ -60,13 +60,17 @@ export const speechService: SpeechService = {
   playVowel(symbol: string) {
     const key = VOWEL_AUDIO[symbol];
     if (key && playFile(key)) return;
-    this.speak(symbol); // 兜底（正常不会走到）
+    // 兜底：近似拼写（"ee"/"oo"…）；不再直接朗读 IPA 符号（TTS 会读成字母名）
+    const tts = symbolToTtsText(symbol);
+    if (tts) this.speak(tts);
   },
 
   async playWord(word: Word) {
     const wav = await synthWord(word);
     if (wav && wav.length > 44 && playWavBytes(wav)) return true;
-    this.speak(wordText(word)); // espeak 失败时 TTS 近似兜底
+    // 兜底：近似拼写（"poobee"…）；不再朗读含 ˈ/IPA 的原文（曾听成字母名）
+    const tts = wordToTtsText(word);
+    if (tts) this.speak(tts);
     return false;
   },
 

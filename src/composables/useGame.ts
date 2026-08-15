@@ -123,8 +123,13 @@ export function useGame() {
   }
 
   const isRunning = computed(() => state.phase === 'playing' || state.phase === 'answered');
+  /**
+   * 剩余秒数（向上取整）。
+   * 注意：必须依赖响应式的 state.timer.leftMs（由 tick()/answer()/start() 更新），
+   * 不能直接读 Date.now()——Date.now() 非响应式，computed 会永久缓存首个值导致数值不更新。
+   */
   const leftSeconds = computed(() =>
-    core.isTimed(state) ? Math.max(0, Math.ceil(core.leftMs(state, Date.now()) / 1000)) : 0
+    core.isTimed(state) ? Math.max(0, Math.ceil(state.timer.leftMs / 1000)) : 0
   );
 
   return reactive({
