@@ -63,11 +63,16 @@ for (const [file, label] of [
     console.log(`[vendor-piper] 已存在，跳过：piper/${file}`);
     continue;
   }
+  // float 模型仅是 int8 的运行时回退（int8 已随仓库提交），下载失败不阻断构建
   try {
-    await download(`${PIPER_BASE}/${file}`, destPath, `piper/${file}`);
+    try {
+      await download(`${PIPER_BASE}/${file}`, destPath, `piper/${file}`);
+    } catch (e) {
+      console.warn(`[vendor-piper] hf-mirror 失败（${e.message}），尝试 huggingface.co…`);
+      await download(`${PIPER_BASE_FALLBACK}/${file}`, destPath, `piper/${file}`);
+    }
   } catch (e) {
-    console.warn(`[vendor-piper] hf-mirror 失败（${e.message}），尝试 huggingface.co…`);
-    await download(`${PIPER_BASE_FALLBACK}/${file}`, destPath, `piper/${file}`);
+    console.warn(`[vendor-piper] 下载失败（${e.message}），跳过：piper/${file}（回退链：int8 → float 缺失时直接 espeak）`);
   }
 }
 

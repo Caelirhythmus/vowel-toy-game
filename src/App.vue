@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from 'vue';
 import { useGame } from '@/composables/useGame';
 import { useI18n } from '@/composables/useI18n';
+import { speechService } from '@/services/audio';
 import LangToggle from '@/components/LangToggle.vue';
 import SettingsPanel from '@/components/SettingsPanel.vue';
 import TimerBar from '@/components/TimerBar.vue';
@@ -18,6 +19,9 @@ let tickTimer: number | null = null;
 
 onMounted(() => {
   tickTimer = window.setInterval(() => game.tick(), 250);
+  // 页面打开即后台预热发音主引擎（Piper 模型下载/加载），
+  // 用户首次点“发音”时通常已就绪，无需干等
+  speechService.warmup();
 });
 onUnmounted(() => {
   if (tickTimer !== null) clearInterval(tickTimer);

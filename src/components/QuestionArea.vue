@@ -12,15 +12,18 @@ import FeedbackCard from './FeedbackCard.vue';
 
 const game = useGame();
 const { t, lang } = useI18n();
-const { status: piperStatus } = useSpeech();
+const { status: piperStatus, progress: piperProgress } = useSpeech();
 
 function speakWord(word: Word) {
   void speechService.playWord(word);
 }
 
-/** 发音按钮文案：加载中提示 / 主引擎不可用时标注回退 */
+/** 发音按钮文案：加载中提示（含进度）/ 主引擎不可用时标注回退 */
 const speakLabel = computed(() => {
-  if (piperStatus.value === 'loading') return t('btn.speak.loading');
+  if (piperStatus.value === 'loading') {
+    if (piperProgress.value != null) return t('btn.speak.loading.pct', { pct: piperProgress.value });
+    return t('btn.speak.loading');
+  }
   if (piperStatus.value === 'error') return t('btn.speak.fallback');
   return t('btn.speak');
 });

@@ -1,6 +1,12 @@
 node_modules/
 dist/
-public/vendor/
+public/vendor/*
+# 例外：int8 量化模型与音色配置提交仓库（18MB < GitHub 100MB 限制），
+# 保证 Vercel/CI 等无 python 量化环境的构建也能直接使用
+!public/vendor/piper/
+public/vendor/piper/*
+!public/vendor/piper/en_US-joe-medium.int8.onnx
+!public/vendor/piper/en_US-joe-medium.onnx.json
 *.tsbuildinfo
 .DS_Store
 *.local
