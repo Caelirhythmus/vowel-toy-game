@@ -43,6 +43,9 @@ for (const [rel, out] of ortFiles) {
 const VOICE = 'en_US-joe-medium';
 const PIPER_BASE = 'https://hf-mirror.com/rhasspy/piper-voices/resolve/main/en/en_US/joe/medium';
 const PIPER_BASE_FALLBACK = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/joe/medium';
+// float 模型仅是 int8 的运行时回退，且 int8 已随仓库提交——
+// 默认不下载（构建不依赖外部网络）；需要时设 PIPER_DOWNLOAD_FLOAT=1
+const DOWNLOAD_FLOAT = process.env.PIPER_DOWNLOAD_FLOAT === '1';
 
 mkdirSync(piperDest, { recursive: true });
 
@@ -63,7 +66,10 @@ for (const [file, label] of [
     console.log(`[vendor-piper] 已存在，跳过：piper/${file}`);
     continue;
   }
-  // float 模型仅是 int8 的运行时回退（int8 已随仓库提交），下载失败不阻断构建
+  if (file === `${VOICE}.onnx` && !DOWNLOAD_FLOAT) {
+    console.log(`[vendor-piper] 跳过 float 模型下载（int8 已随仓库提交；需要时设 PIPER_DOWNLOAD_FLOAT=1）`);
+    continue;
+  }
   try {
     try {
       await download(`${PIPER_BASE}/${file}`, destPath, `piper/${file}`);

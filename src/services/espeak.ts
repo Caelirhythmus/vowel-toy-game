@@ -32,12 +32,23 @@ function loadFactory(): Promise<ESpeakFactory> {
   return factoryPromise;
 }
 
+/** espeak 加载/合成总超时：慢网络下避免点击后长时间无声（超时即走 TTS 兜底） */
+const ESPEAK_TIMEOUT_MS = 45_000;
+
 async function synthToWav(args: string[]): Promise<Uint8Array | null> {
+  // 超时竞速：espeak wasm 首次加载可达 18MB，网络慢时不应让用户无限等待；
+  // 超时后本次回退 TTS，后台加载仍在继续，下次点击即可用
+  const timeout = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), ESPEAK_TIMEOUT_MS);
+  });
   try {
-    const factory = await loadFactory();
-    const espeak = await factory({ arguments: args });
-    const data = espeak.FS.readFile('/out.wav');
-    return data instanceof Uint8Array ? data : new Uint8Array(data);
+    const work = (async () => {
+      const factory = await loadFactory();
+      const espeak = await factory({ arguments: args });
+      const data = espeak.FS.readFile('/out.wav');
+      return data instanceof Uint8Array ? data : new Uint8Array(data);
+    })();
+    return await Promise.race([work, timeout]);
   } catch (e) {
     // 失败不静默：与 TTS 兜底联动排查（曾因构建路径 404 导致全部回退 TTS）
     console.warn('[espeak] 合成失败，将回退到浏览器 TTS 近似朗读：', e);
