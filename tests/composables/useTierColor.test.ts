@@ -37,12 +37,12 @@ describe('useTierColor 配色切换', () => {
 
   it('setColor：更新属性 + 持久化 localStorage + current 计算属性', async () => {
     const tc = await freshColor();
-    tc.setColor('traffic');
-    expect(tc.color.value).toBe('traffic');
-    expect(tc.current.value.id).toBe('traffic');
-    expect(document.documentElement.dataset.tierColor).toBe('traffic');
+    tc.setColor('nature');
+    expect(tc.color.value).toBe('nature');
+    expect(tc.current.value.id).toBe('nature');
+    expect(document.documentElement.dataset.tierColor).toBe('nature');
     const saved = JSON.parse(localStorage.getItem('vl.tierColor') ?? '{}');
-    expect(saved.color).toBe('traffic');
+    expect(saved.color).toBe('nature');
   });
 
   it('持久化非法值：回退默认配色', async () => {

@@ -89,24 +89,20 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
-  /* 频率档位三色阶（sky：实色填充白字。
+  /* 频率档位三色阶（sky 默认配色「光谱」：紫→蓝→青冷色渐变。
      显眼度单调递增：典型 < 偶见 < 罕见——填充越亮越显眼、
-     饱和度越高越显眼，紫色固有亮度低于蓝色：
-     - 典型（常见）：低饱和灰紫——最低调，常见信息无需强调
-     - 偶见：蓝紫、中饱和——中等显眼
-     - 罕见：高饱和亮蓝——最醒目，稀有信息最值得注意
-     色相 274°（紫）→ 225°（蓝紫）→ 210°（蓝），
-     饱和度 22% → 55% → 85% 递增；白字对比 ~3.6-4.3:1，美观优先） */
-  --tier-typical-bg: #977bab; /* 低饱和灰紫（hsl 274,22%,58%） */
+     饱和度越高越显眼：典型=紫（低饱和）、偶见=蓝（中饱和）、
+     罕见=青（高饱和亮色）；白字对比 ~3.6-4.3:1，美观优先） */
+  --tier-typical-bg: #9d7fd8; /* 紫（hsl 258,50%,67%） */
   --tier-typical-ink: #fff;
-  --tier-occasional-bg: #5f7fd0; /* 蓝紫（hsl 225,55%,59%） */
+  --tier-occasional-bg: #5b8de0; /* 蓝（hsl 219,69%,62%） */
   --tier-occasional-ink: #fff;
-  --tier-rare-bg: #1279e2; /* 高饱和蓝（hsl 210,85%,48%） */
+  --tier-rare-bg: #17a8c4; /* 青（hsl 189,79%,43%） */
   --tier-rare-ink: #fff;
-  /* 三档深色文字版（玻璃/描边方案用，同色相低亮度保证对比） */
-  --tier-typical-deep: #7d6294;
-  --tier-occasional-deep: #4a67b4;
-  --tier-rare-deep: #0d63c0;
+  /* 三档深色文字版（玻璃形态用，同色相低亮度保证对比） */
+  --tier-typical-deep: #6a4fb8;
+  --tier-occasional-deep: #3a63b8;
+  --tier-rare-deep: #0d7d94;
 
   /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
   --blob-1: rgba(64, 145, 235, 0.46);
@@ -1464,57 +1460,10 @@ select:disabled {
   color: var(--tier-rare-deep);
 }
 
-/* 方案「outline」描边：透明底 + 配色主色描边 + 同色系深字，线性轻盈 */
-[data-theme='sky'][data-tier-style='outline'] .tier-badge {
-  background: transparent;
-  border: 1.5px solid;
-}
-
-[data-theme='sky'][data-tier-style='outline'] .tier-typical {
-  border-color: var(--tier-typical-bg);
-  color: var(--tier-typical-deep);
-}
-
-[data-theme='sky'][data-tier-style='outline'] .tier-occasional {
-  border-color: var(--tier-occasional-bg);
-  color: var(--tier-occasional-deep);
-}
-
-[data-theme='sky'][data-tier-style='outline'] .tier-rare {
-  border-color: var(--tier-rare-bg);
-  color: var(--tier-rare-deep);
-}
-
 /* ============================================================
  * 频率徽章配色方案（sky 专属覆盖 --tier-* 变量）
- * 默认「紫蓝」定义在 :root（sky 主题块），无需覆盖
+ * 默认「光谱」定义在 :root（sky 主题块），无需覆盖
  * ============================================================ */
-
-/* 单色蓝：同一蓝相，明度阶梯——罕见最深最醒目 */
-[data-theme='sky'][data-tier-color='mono'] {
-  --tier-typical-bg: #a8cdf0;
-  --tier-typical-ink: #fff;
-  --tier-typical-deep: #3a7cc0;
-  --tier-occasional-bg: #5f9fe0;
-  --tier-occasional-ink: #fff;
-  --tier-occasional-deep: #2f63ad;
-  --tier-rare-bg: #1a5fa8;
-  --tier-rare-ink: #fff;
-  --tier-rare-deep: #123e70;
-}
-
-/* 光谱：紫→蓝→青冷色渐变，跨度大辨识度高 */
-[data-theme='sky'][data-tier-color='spectral'] {
-  --tier-typical-bg: #9d7fd8;
-  --tier-typical-ink: #fff;
-  --tier-typical-deep: #6a4fb8;
-  --tier-occasional-bg: #5b8de0;
-  --tier-occasional-ink: #fff;
-  --tier-occasional-deep: #3a63b8;
-  --tier-rare-bg: #17a8c4;
-  --tier-rare-ink: #fff;
-  --tier-rare-deep: #0d7d94;
-}
 
 /* 自然：绿→青→蓝，清新自然 */
 [data-theme='sky'][data-tier-color='nature'] {
@@ -1527,45 +1476,6 @@ select:disabled {
   --tier-rare-bg: #2f6fc0;
   --tier-rare-ink: #fff;
   --tier-rare-deep: #1c4e92;
-}
-
-/* 暖警示：琥珀→橙→红，罕见=最强烈的警示感 */
-[data-theme='sky'][data-tier-color='warm'] {
-  --tier-typical-bg: #d9a13b;
-  --tier-typical-ink: #fff;
-  --tier-typical-deep: #a8741e;
-  --tier-occasional-bg: #d96f2e;
-  --tier-occasional-ink: #fff;
-  --tier-occasional-deep: #a84c1a;
-  --tier-rare-bg: #c9433c;
-  --tier-rare-ink: #fff;
-  --tier-rare-deep: #962a26;
-}
-
-/* 马卡龙：粉彩低饱和 + 深字，柔和精致 */
-[data-theme='sky'][data-tier-color='pastel'] {
-  --tier-typical-bg: #d6c3ef;
-  --tier-typical-ink: #5a4590;
-  --tier-typical-deep: #6a55a8;
-  --tier-occasional-bg: #bfd9f5;
-  --tier-occasional-ink: #2f5f9e;
-  --tier-occasional-deep: #3a6fb8;
-  --tier-rare-bg: #bfe8dd;
-  --tier-rare-ink: #1f7a66;
-  --tier-rare-deep: #268f78;
-}
-
-/* 红绿灯：经典语义——绿=常见通行、黄=留意、红=警示 */
-[data-theme='sky'][data-tier-color='traffic'] {
-  --tier-typical-bg: #43a86e;
-  --tier-typical-ink: #fff;
-  --tier-typical-deep: #1f7a4c;
-  --tier-occasional-bg: #d9a13b;
-  --tier-occasional-ink: #fff;
-  --tier-occasional-deep: #a8741e;
-  --tier-rare-bg: #d04a4a;
-  --tier-rare-ink: #fff;
-  --tier-rare-deep: #9e2f2f;
 }
 
 .example-card {
@@ -1732,9 +1642,11 @@ select:disabled {
 }
 
 .cheatsheet th {
-  background: var(--accent-strong);
-  color: #fff;
-  font-weight: 600;
+  /* 浅色表头：主色系浅底 + 深字 + 主色底边，与玻璃卡片语言统一 */
+  background: var(--accent-soft-2);
+  color: var(--accent-strong);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
 }
 
 .cheatsheet tr:nth-child(even) td {
