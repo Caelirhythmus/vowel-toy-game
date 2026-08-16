@@ -63,7 +63,8 @@ export const STORAGE_KEYS = {
   lang: 'vl.lang',
   settings: 'vl.settings',
   history: 'vl.history',
-  theme: 'vl.theme'
+  theme: 'vl.theme',
+  tierStyle: 'vl.tierStyle'
 } as const;
 
 export interface HistoryEntry {
