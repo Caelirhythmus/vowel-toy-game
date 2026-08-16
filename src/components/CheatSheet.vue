@@ -5,6 +5,8 @@ import { TIER_OPTIONS, TYPE_OPTIONS } from '@/config/game';
 import { FAMILIES, ruleExcludedFor, ruleTierFor } from '@/config/families';
 import { useI18n } from '@/composables/useI18n';
 import { useGame } from '@/composables/useGame';
+import TierColorPicker from './TierColorPicker.vue';
+import TierStyleToggle from './TierStyleToggle.vue';
 
 const { t, lang } = useI18n();
 const game = useGame();
@@ -43,6 +45,12 @@ const rows = computed(() => {
 <template>
   <div v-if="famDef" class="cheatsheet-context">
     {{ t('set.family') }}：{{ t(famDef.labelKey) }}（{{ lang === 'zh' ? famDef.periodZh : famDef.periodEn }}）· {{ t('cheat.familyScope') }}
+  </div>
+  <!-- 频率底色调节：控制下方表格与答题反馈中档位徽章的配色/形态 -->
+  <div class="tier-toolbar">
+    <span class="tier-toolbar-label">{{ t('tier.toolbar') }}</span>
+    <TierColorPicker />
+    <TierStyleToggle />
   </div>
   <table class="cheatsheet">
     <thead>

@@ -1629,28 +1629,78 @@ select:disabled {
 
 .cheatsheet {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.92rem;
 }
 
+/* 现代分行式：无网格边框，表头浅底 + 主色底边，行分隔线 + hover */
 .cheatsheet th,
 .cheatsheet td {
-  border: 1px solid var(--line);
-  padding: 7px 10px;
+  border: none;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: top;
 }
 
-.cheatsheet th {
-  /* 浅色表头：主色系浅底 + 深字 + 主色底边，与玻璃卡片语言统一 */
+.cheatsheet thead th {
   background: var(--accent-soft-2);
   color: var(--accent-strong);
   font-weight: 700;
   border-bottom: 2px solid var(--accent);
 }
 
-.cheatsheet tr:nth-child(even) td {
+.cheatsheet thead th:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.cheatsheet thead th:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.cheatsheet tbody tr {
+  border-bottom: 1px solid var(--line);
+}
+
+.cheatsheet tbody tr:last-child {
+  border-bottom: none;
+}
+
+.cheatsheet tbody tr:hover {
   background: var(--accent-soft);
+}
+
+/* ---------- 频率底色工具栏（速查表上方） ---------- */
+.tier-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tier-toolbar-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+  margin-right: 2px;
+}
+
+/* 工具栏内的按钮：浅色玻璃版（覆盖 header 深底的白色版） */
+.tier-toolbar .theme-btn {
+  background: var(--glass-bg-card);
+  border: 1px solid var(--glass-border-soft);
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  padding: 6px 12px;
+}
+
+.tier-toolbar .theme-btn:hover {
+  background: var(--accent-soft);
+}
+
+.tier-toolbar .tier-color-menu {
+  top: calc(100% + 6px);
 }
 
 .cheatsheet .tier-badge {
