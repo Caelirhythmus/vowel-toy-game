@@ -325,13 +325,19 @@ async function createSession(
     try {
       const cacheKey = candidateCacheKey(cand);
       // 1) 本地缓存命中：零网络请求，直接进入会话初始化
-      const fromCache = await cachedBytes(cacheKey);
+      //    ——长度校验：与 knownBytes 不符视为坏缓存（防 create 反复失败）
+      let fromCache = await cachedBytes(cacheKey);
+      if (fromCache && fromCache.length !== cand.knownBytes) {
+        console.warn(`[piper] 本地缓存字节数不符（${fromCache.length} != ${cand.knownBytes}），丢弃重下（${cand.label}）`);
+        fromCache = null;
+        void (await openModelCache())?.delete(cacheRequest(cacheKey));
+      }
       let modelBytes: Uint8Array;
       if (fromCache) {
         modelBytes = fromCache;
         console.info(`[piper] 语音模型命中本地缓存（${cand.label}），跳过下载`);
-        // 无百分比 = “初始化中”，UI 与“下载中”区分开
-        setStatus('loading', null);
+        // 100% = “已下载，正在初始化”，与“下载中”区分开（手机端可感知）
+        setStatus('loading', 100);
       } else {
         // 2) 未命中：走网络候选链下载，成功后写入本地缓存（下次免下载）
         modelBytes = cand.tgz
