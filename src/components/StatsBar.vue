@@ -8,19 +8,19 @@ const { t } = useI18n();
 
 <template>
   <div class="stats">
-    <div class="stat">
+    <div class="stat ok">
       <span class="stat-label">{{ t('stat.correct') }}</span>
       <span class="stat-value">{{ stats.correct }}</span>
     </div>
-    <div class="stat">
+    <div class="stat bad">
       <span class="stat-label">{{ t('stat.incorrect') }}</span>
       <span class="stat-value">{{ stats.incorrect }}</span>
     </div>
-    <div class="stat">
+    <div class="stat total">
       <span class="stat-label">{{ t('stat.total') }}</span>
       <span class="stat-value">{{ stats.total }}</span>
     </div>
-    <div class="stat">
+    <div class="stat streak">
       <span class="stat-label">{{ t('stat.streak') }}</span>
       <span class="stat-value">{{ stats.streak }}</span>
     </div>

@@ -75,6 +75,8 @@
   --success-line: #b7e0c8;
   --success-ink: #166b43;
   --warn: #e8890c;
+  --warn-strong: #9a5b00;
+  --warn-line: #fbe3bd;
   --danger: #e5533b;
   --danger-strong: #c2372a;
   --danger-line: #f4c4c4;
@@ -142,6 +144,8 @@
   --success-line: #b4ddc4;
   --success-ink: #14603c;
   --warn: #d97a06;
+  --warn-strong: #a85d04;
+  --warn-line: #f8e3c8;
   --danger: #d9563e;
   --danger-strong: #b03f2c;
   --danger-line: #f0c2ba;
@@ -206,6 +210,8 @@
   --success-line: #b2dfc6;
   --success-ink: #11603b;
   --warn: #d18206;
+  --warn-strong: #9c5f04;
+  --warn-line: #f7e4c0;
   --danger: #d9563e;
   --danger-strong: #b03f2c;
   --danger-line: #f0c2ba;
@@ -270,6 +276,8 @@
   --success-line: #b3e0c9;
   --success-ink: #12603d;
   --warn: #d67e0c;
+  --warn-strong: #a05f08;
+  --warn-line: #f8e4c4;
   --danger: #d9555f;
   --danger-strong: #b03a46;
   --danger-line: #f0c4ca;
@@ -633,8 +641,8 @@ select:disabled {
 }
 
 .btn.start {
-  background-color: var(--success);
-  color: #fff;
+  background-color: var(--accent);
+  color: var(--on-accent);
 }
 
 /* 重新开始的两步确认态：橙色警示，再点一次才生效 */
@@ -655,8 +663,8 @@ select:disabled {
 }
 
 .btn.again {
-  background-color: var(--success);
-  color: #fff;
+  background-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn.reset {
@@ -1178,26 +1186,29 @@ select:disabled {
   font-weight: 600;
 }
 
+/* 频率档位徽章（柔和化：浅底深字 pill，与主题同族不扎眼） */
 .tier-badge {
   display: inline-block;
   padding: 2px 10px;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #fff;
   margin-left: 6px;
 }
 
 .tier-typical {
-  background: var(--success-strong);
+  background: var(--success-line);
+  color: var(--success-strong);
 }
 
 .tier-occasional {
-  background: var(--warn);
+  background: var(--warn-line);
+  color: var(--warn-strong);
 }
 
 .tier-rare {
-  background: var(--danger);
+  background: var(--danger-line);
+  color: var(--danger-strong);
 }
 
 .example-card {
@@ -1220,7 +1231,7 @@ select:disabled {
   font-size: 0.9rem;
 }
 
-/* ---------- 统计 ---------- */
+/* ---------- 统计（现代化：浅玻璃卡 + 顶部语义色条 + 彩色数值） ---------- */
 .stats {
   display: flex;
   justify-content: center;
@@ -1230,26 +1241,61 @@ select:disabled {
 }
 
 .stat {
-  background-color: var(--glass-dark);
+  position: relative;
+  overflow: hidden; /* 裁掉顶部色条圆角溢出 */
+  background-color: var(--glass-bg-card);
   backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
   -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 10px;
+  border: 1px solid var(--glass-border-soft);
+  padding: 13px 14px 10px;
+  border-radius: 12px;
   text-align: center;
   min-width: 96px;
+  box-shadow: 0 2px 10px rgba(30, 60, 50, 0.05);
+}
+
+/* 顶部语义色条：正确绿 / 错误红 / 已答主题色 / 连对琥珀 */
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--stat-color);
+  opacity: 0.85;
+}
+
+.stat.ok {
+  --stat-color: var(--success);
+}
+
+.stat.bad {
+  --stat-color: var(--danger);
+}
+
+.stat.total {
+  --stat-color: var(--accent);
+}
+
+.stat.streak {
+  --stat-color: var(--warn);
 }
 
 .stat-label {
   display: block;
-  font-size: 0.8rem;
-  opacity: 0.8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
   margin-bottom: 2px;
 }
 
 .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--stat-color);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
 }
 
 /* ---------- 说明区 ---------- */
@@ -1487,7 +1533,7 @@ select:disabled {
 
   .game-side .stat {
     min-width: 0;
-    padding: 6px 4px;
+    padding: 10px 4px 6px;
   }
 
   .game-side .stat-value {
