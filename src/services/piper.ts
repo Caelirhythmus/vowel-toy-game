@@ -11,7 +11,7 @@
  * ============================================================ */
 import { wordToPiperIds } from '@/core/piper';
 import type { Word } from '@/core';
-import { PIPER_VOICE, type ModelCandidate } from '@/config/audio';
+import { PIPER_VOICE } from '@/config/audio';
 import { encodeWav16 } from './wav';
 
 /* ---------- onnxruntime-web 最小类型面 ---------- */
@@ -191,19 +191,43 @@ function resolveCandidateUrl(u: string): string {
   return /^https?:/i.test(u) ? u : vendorUrl(u);
 }
 
+/** 国内 IP 检测：并行请求国内可达的 IP 归属 API（任一返回“中国”即判定国内）。
+ *  3s 超时；失败返回 false（走非国内候选，避免国外/代理场景卡 Gitee）。
+ *  结果模块级缓存（一次会话只检测一次）。 */
+let chinaRegion: boolean | null = null;
+
+async function isChinaIp(): Promise<boolean> {
+  if (chinaRegion !== null) return chinaRegion;
+  const apis = [
+    'https://qifu-api.baidubce.com/ip/local/geo/v1/district',
+    'https://ip.useragentinfo.com/json'
+  ];
+  try {
+    const results = await Promise.allSettled(
+      apis.map((u) => fetch(u, { signal: AbortSignal.timeout(3000) }).then((r) => r.text()))
+    );
+    chinaRegion = results.some((r) => r.status === 'fulfilled' && /中国|China/i.test(r.value));
+  } catch {
+    chinaRegion = false;
+  }
+  console.info(`[piper] 国内 IP 检测：${chinaRegion ? '是（Gitee 镜像优先）' : '否（跳过 Gitee）'}`);
+  return chinaRegion;
+}
+
 /** 会话创建超时：wasm 初始化大模型在弱网/弱设备上可能极慢或挂起，超时降级下一候选 */
 const CREATE_TIMEOUT_MS = 30_000;
 
-/** 依次尝试模型源（候选列表来自 PIPER_VOICE，桌面/移动不同），任一成功即返回会话 */
+/** 依次尝试模型源（候选来自 PIPER_VOICE，按桌面/移动 + 国内/国外过滤），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
   const mobile = isMobileDevice();
-  const candidates: readonly ModelCandidate[] = mobile
-    ? PIPER_VOICE.modelCandidatesMobile
-    : PIPER_VOICE.modelCandidatesDesktop;
+  // IP 检测（3s 上限）与模型下载串行开始；检测失败默认走非国内候选
+  const china = await isChinaIp();
+  const all = mobile ? PIPER_VOICE.modelCandidatesMobile : PIPER_VOICE.modelCandidatesDesktop;
+  const candidates = china ? all : all.filter((c) => !c.chinaOnly);
   if (mobile) {
     console.info('[piper] 移动端设备：使用 int8 小模型候选（float 60MB 在手机端下载慢、会话创建易超时）');
   }
