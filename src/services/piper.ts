@@ -454,7 +454,27 @@ export async function synthPiperWord(word: Word): Promise<Uint8Array | null> {
   if (!loaded) return null;
   const ids = wordToPiperIds(word, loaded.config.phoneme_id_map);
   if (!ids) return null;
+  const key = ids.join(',');
+  const hit = synthCache.get(key);
+  if (hit) return hit;
   const pcm = await synthIds(loaded, ids);
   if (!pcm) return null;
-  return encodeWav16(pcm, loaded.config.audio.sample_rate);
+  const wav = encodeWav16(pcm, loaded.config.audio.sample_rate);
+  // 缓存上限：超出即全清（学习场景同会话重复点读同一词，命中率极高；
+  // 全清实现简单，且清后仍按需重建，无正确性影响）
+  if (synthCache.size >= SYNTH_CACHE_MAX) synthCache.clear();
+  synthCache.set(key, wav);
+  return wav;
 }
+
+/* ============================================================
+ * 词级合成结果缓存（内存 Map）
+ * 目的：同一伪词反复点读（学习场景高频操作）不必每次重跑
+ * 神经网络推理（单词级 ~0.3-1s）+ WAV 编码；缓存命中直接播放。
+ * - key = 音素 id 序列（语音精确：同音素序列必同输出；词表调整
+ *   自然换 key，无需手动失效）
+ * - 值 = WAV 字节（audio.ts 播放时 slice 副本，无共享突变风险）
+ * - 上限 SYNTH_CACHE_MAX 词（~40KB/词 → 峰值 ~8MB，可接受）
+ * ============================================================ */
+const synthCache = new Map<string, Uint8Array>();
+const SYNTH_CACHE_MAX = 200;
