@@ -35,7 +35,7 @@ interface OrtApi {
   Tensor: new (type: string, data: Float32Array | BigInt64Array, dims: number[]) => OrtTensor;
 }
 
-interface PiperConfig {
+export interface PiperConfig {
   audio: { sample_rate: number };
   inference: { noise_scale: number; length_scale: number; noise_w: number };
   phoneme_id_map: Record<string, number[]>;
@@ -98,9 +98,90 @@ function loadOrt(): Promise<OrtApi> {
 }
 
 interface LoadedSession {
-  ort: OrtApi;
-  session: OrtSession;
+  mode: 'worker' | 'main';
+  /** worker 模式：会话创建/推理在独立线程（不阻塞主线程，超时可生效） */
+  worker?: WorkerHandle;
+  /** 主线程模式（worker 不可用/失败时的降级路径） */
+  ort?: OrtApi;
+  session?: OrtSession;
   config: PiperConfig;
+}
+
+/* ---------- Web Worker 会话（create/run 不阻塞主线程） ----------
+ * 背景：主线程同步执行 InferenceSession.create（16MB 模型在手机上可
+ * 阻塞主线程数十秒，连超时定时器都无法触发 → UI 卡 100% 无响应）。
+ * worker 模式把 create/run 移到独立线程，主线程可正常更新进度/响应
+ * 超时；模型字节与音频经 postMessage transfer（零拷贝）。
+ */
+interface WorkerHandle {
+  worker: Worker;
+  config: PiperConfig;
+  nextRequest: number;
+  pending: Map<number, { resolve: (pcm: Float32Array) => void; reject: (e: Error) => void }>;
+}
+
+let workerFailed = false;
+
+function createWorkerSession(modelBytes: Uint8Array, config: PiperConfig): Promise<WorkerHandle> {
+  return new Promise((resolve, reject) => {
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('./piper.worker.ts', import.meta.url), { type: 'module' });
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    const handle: WorkerHandle = { worker, config, nextRequest: 0, pending: new Map() };
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new Error(`Worker 会话创建超时（${CREATE_TIMEOUT_MS / 1000}s）`));
+    }, CREATE_TIMEOUT_MS);
+    worker.onmessage = (e: MessageEvent) => {
+      const msg = e.data as
+        | { type: 'ready' }
+        | { type: 'error'; message: string }
+        | { type: 'audio'; requestId: number; pcm: ArrayBuffer };
+      if (msg.type === 'ready') {
+        clearTimeout(timeout);
+        resolve(handle);
+      } else if (msg.type === 'error') {
+        clearTimeout(timeout);
+        worker.terminate();
+        reject(new Error(msg.message));
+      } else if (msg.type === 'audio') {
+        const p = handle.pending.get(msg.requestId);
+        if (p) {
+          handle.pending.delete(msg.requestId);
+          p.resolve(new Float32Array(msg.pcm));
+        }
+      }
+    };
+    worker.onerror = (ev: ErrorEvent) => {
+      clearTimeout(timeout);
+      worker.terminate();
+      reject(new Error(ev.message || 'Worker 错误'));
+    };
+    // 复制后 transfer：主线程保留原字节，worker 失败时主线程降级路径可用
+    const copy = modelBytes.slice();
+    worker.postMessage(
+      {
+        type: 'init',
+        ortUrl: vendorUrl(`${PIPER_VOICE.ortPath}/esm/ort.min.js`),
+        wasmDir: vendorUrl(`${PIPER_VOICE.ortPath}/`),
+        modelBytes: copy,
+        config
+      },
+      [copy.buffer]
+    );
+  });
+}
+
+function workerSynth(handle: WorkerHandle, ids: number[]): Promise<Float32Array> {
+  return new Promise((resolve, reject) => {
+    const requestId = handle.nextRequest++;
+    handle.pending.set(requestId, { resolve, reject });
+    handle.worker.postMessage({ type: 'synth', ids, requestId });
+  });
 }
 
 /* ---------- 加载状态（供 UI 提示“首次加载语音模型…”） ---------- */
@@ -310,9 +391,7 @@ function candidateCacheKey(cand: ModelCandidate): string {
   return cand.url!;
 }
 
-async function createSession(
-  ort: OrtApi
-): Promise<{ session: OrtSession; config: PiperConfig }> {
+async function createSession(): Promise<LoadedSession> {
   const cfgBytes = await fetchWithProgress(vendorUrl(PIPER_VOICE.configPath), 0, 15_000, null);
   const config = JSON.parse(new TextDecoder().decode(cfgBytes)) as PiperConfig;
   const mobile = isMobileDevice();
@@ -360,9 +439,20 @@ async function createSession(
               );
         void storeBytes(cacheKey, modelBytes);
       }
-      // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
-      // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
-      // 传错会在 create 时直接抛 "unsupported graph optimization level"）
+      // 3) 会话创建：优先 Web Worker（create 不阻塞主线程，超时可生效；
+      //    手机上主线程 create 曾阻塞数十秒导致 UI 卡死 100%）
+      if (!workerFailed && typeof Worker !== 'undefined') {
+        try {
+          const wh = await createWorkerSession(modelBytes, config);
+          console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz，worker 线程）`);
+          return { mode: 'worker', worker: wh, config };
+        } catch (e) {
+          workerFailed = true;
+          console.warn(`[piper] worker 模式失败（${(e as Error).message}），本会话降级主线程…`);
+        }
+      }
+      // 主线程降级路径（worker 不可用/失败时）
+      const ort = await loadOrt();
       const session = await Promise.race([
         ort.InferenceSession.create(modelBytes, {
           executionProviders: ['wasm'],
@@ -375,8 +465,8 @@ async function createSession(
           )
         )
       ]);
-      console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz）`);
-      return { session, config };
+      console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz，主线程）`);
+      return { mode: 'main', ort, session, config };
     } catch (e) {
       lastErr = e;
       if (i < candidates.length - 1) {
@@ -392,10 +482,9 @@ function loadSession(): Promise<LoadedSession | null> {
     setStatus('loading', null);
     sessionPromise = (async () => {
       try {
-        const ort = await loadOrt();
-        const loaded = await createSession(ort);
+        const loaded = await createSession();
         setStatus('ready');
-        return { ort, ...loaded };
+        return loaded;
       } catch (e) {
         // 主引擎失败不静默：上层回退 espeak
         lastError = (e as Error).message;
@@ -416,10 +505,15 @@ export async function warmupPiper(): Promise<boolean> {
   return loaded !== null;
 }
 
-/** 音素 id 序列 → 归一化 PCM（[-1,1]） */
+/** 音素 id 序列 → 归一化 PCM（[-1,1]）；worker 模式走独立线程，主线程模式走本地 */
 async function synthIds(loaded: LoadedSession, ids: number[]): Promise<Float32Array | null> {
-  const { ort, session, config } = loaded;
   try {
+    if (loaded.mode === 'worker' && loaded.worker) {
+      return await workerSynth(loaded.worker, ids);
+    }
+    const ort = loaded.ort!;
+    const session = loaded.session!;
+    const { config } = loaded;
     const feeds: Record<string, OrtTensor> = {
       input: new ort.Tensor('int64', BigInt64Array.from(ids.map(BigInt)), [1, ids.length]),
       input_lengths: new ort.Tensor('int64', BigInt64Array.from([BigInt(ids.length)]), [1]),
