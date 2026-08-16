@@ -95,12 +95,24 @@ function jsdelivrParts(host: string): string[] {
   );
 }
 
+/**
+ * Gitee 镜像（国内加速渠道）：
+ * 需在 gitee.com 从 GitHub 导入本仓库（含已提交的分片文件）。仓库名/分支与
+ * 下方常量一致即直接生效；若创建时用了不同名称或分支，改这几行即可。
+ */
+const GITEE_OWNER = 'Caelirhythmus';
+const GITEE_REPO = 'vowel-toy-game';
+const GITEE_BRANCH = 'master';
+function giteeUrl(relPath: string): string {
+  return `https://gitee.com/${GITEE_OWNER}/${GITEE_REPO}/raw/${GITEE_BRANCH}/public/${relPath}`;
+}
+
 export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
   /**
    * 音质优先架构：
-   * - 桌面：float 原版分片（60MB 切 4×15MB，jsDelivr 多节点 CDN + 本地）
-   *   → int8（16MB 非对称量化，音质略降但下载快）
+   * - 桌面：float 原版分片（60MB 切 4×15MB，Gitee 国内镜像 → jsDelivr
+   *   多节点 CDN → 本地）→ int8（16MB 非对称量化，音质略降但下载快）
    * - 移动：int8 小模型为主（float 60MB 在手机端下载慢、会话创建易超时）
    * - 全失败 → 降级 espeak/TTS
    */
@@ -108,8 +120,14 @@ export const PIPER_VOICE = {
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelBytesFloat: 63201294,
-  /** 桌面候选：jsDelivr cdn 主域 → gcore 子域 → 本地分片 → int8 本地 */
+  /** 桌面候选：Gitee 国内镜像 → jsDelivr cdn → gcore → 本地分片 → int8 本地 */
   modelCandidatesDesktop: [
+    {
+      label: 'float Gitee 镜像',
+      timeoutMs: 90_000,
+      parts: FLOAT_PARTS_LOCAL.map((p) => giteeUrl(p)),
+      totalBytes: 63201294
+    },
     {
       label: 'float jsDelivr CDN',
       timeoutMs: 90_000,
@@ -130,8 +148,14 @@ export const PIPER_VOICE = {
     },
     { label: 'int8 本地', timeoutMs: 60_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
   ] as ModelCandidate[],
-  /** 移动候选：int8 CDN（jsDelivr，单文件 <20MB）→ int8 本地 */
+  /** 移动候选：int8 Gitee 镜像 → jsDelivr → 本地 */
   modelCandidatesMobile: [
+    {
+      label: 'int8 Gitee 镜像',
+      timeoutMs: 60_000,
+      url: giteeUrl('vendor/piper/en_US-joe-medium.int8.onnx'),
+      knownBytes: 16599901
+    },
     {
       label: 'int8 jsDelivr',
       timeoutMs: 60_000,
