@@ -20,10 +20,14 @@ export const RULES: Rule[] = [
     },
     familyTiers: [
       { family: 'romance', tier: 'rare' },
-      { family: 'slavic', tier: 'rare' }
+      { family: 'slavic', tier: 'typical' }
     ],
-    // 斯拉夫史高化证据弱（矩阵 ⚠️），排除出题
-    familyExcluded: ['slavic'],
+    familyExamples: {
+      // 乌克兰语史 *ě→i 是东斯拉夫标志性高化（教科书级铁证）；模型用 e→i 表达
+      slavic: [
+        { text: 'ě → i', srcZh: '乌克兰语史（літо < *lěto，东斯拉夫高化）', srcEn: 'Ukrainian lito < *lěto (East Slavic raising)' }
+      ]
+    },
     transform: (v) => {
       const b = resolveVowel(v);
       if (!b || v.s === 'ə' || v.diph) return null;
@@ -294,6 +298,36 @@ export const RULES: Rule[] = [
     },
     examples: [
       { text: 'ɛ → jɛ', srcZh: '意大利语史 pedem→piede（重读开音节）', srcEn: 'Italian pedem→piede (stressed open syllable)' }
+    ]
+  },
+  {
+    id: 'fr-front', type: 'fronting', tier: 'rare', env: null,
+    name: { zh: '前化（无条件）', en: 'Fronting (unconditioned)' },
+    desc: {
+      zh: '后圆唇元音无条件前化：u→y、o→ø。古法语 u→y 是语音学史上最著名的无条件前化（sûr < *securus），o→ø 随之（fleur < flōrem）。',
+      en: 'Back rounded vowels front unconditionally: u→y, o→ø. Old French u→y is the most famous unconditioned fronting in phonology (sûr < *securus), followed by o→ø (fleur < flōrem).'
+    },
+    sysDesc: { zh: '后圆唇元音无条件前化 u→y、o→ø', en: 'back rounded vowels front unconditionally' },
+    familyNote: {
+      zh: '无条件前化集中于法语史（u→y 铁证）；i-umlaut 型条件前化是日耳曼语特征——同一"前化"类型两种触发方式',
+      en: 'Unconditioned fronting clusters in French history (u→y); conditioned i-umlaut is Germanic — two triggers for one change type'
+    },
+    familyTiers: [{ family: 'romance', tier: 'typical' }],
+    familyExcluded: ['english', 'chinese', 'slavic'],
+    familyExamples: {
+      romance: [
+        { text: 'u → y', srcZh: '古法语无条件前化（sûr < seür < *securus，11–13 世纪）', srcEn: 'Old French unconditioned fronting (sûr < seür < *securus, 11th–13th c.)' },
+        { text: 'o → ø', srcZh: '古法语 ō→ø（fleur < flōrem）', srcEn: 'Old French ō→ø (fleur < flōrem)' }
+      ]
+    },
+    transform: (v) => {
+      // 注意：不含 a→æ（那是 raise 的输出，避免类型题歧义"a→æ 是高化还是前化"）
+      const map: Record<string, string> = { u: 'y', o: 'ø' };
+      const t = map[v.s];
+      return t ? { s: t, long: v.long, diph: false } : null;
+    },
+    examples: [
+      { text: 'u → y', srcZh: '古法语 sûre→sûr（无条件前化）', srcEn: 'Old French sûr (unconditioned fronting)' }
     ]
   }
 ];

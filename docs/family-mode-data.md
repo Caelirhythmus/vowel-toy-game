@@ -23,10 +23,11 @@
 
 | 规则 | 英语史 | 汉语史 | 罗曼史 | 斯拉夫史 |
 |---|---|---|---|---|
-| raise 高化 | ✅ typical（GVS eː→iː、oː→uː，[剑桥 Long-Vowel Shifts](https://www.cambridge.org/core/books/abs/longvowel-shifts-in-english-c10501700/development-of-oe-e-and-eo/E4156D7591539014451AD96D963730E3)） | ✅ typical（高化倾向，王力《汉语史稿》） | ⚠️ rare（无大规模高化链，证据弱） | ⚠️ rare（俄语史无典型高化） |
+| raise 高化 | ✅ typical（GVS eː→iː、oː→uː，[剑桥 Long-Vowel Shifts](https://www.cambridge.org/core/books/abs/longvowel-shifts-in-english-c10501700/development-of-oe-e-and-eo/E4156D7591539014451AD96D963730E3)） | ✅ typical（高化倾向，王力《汉语史稿》） | ⚠️ rare（无大规模高化链，证据弱） | ✅ typical（乌克兰语 *ě→i，літо < *lěto，东斯拉夫标志性高化——教科书级铁证，2026-08 恢复） |
 | lower-a（a-mutation） | 🚫（PGmc 史前特征，切片内无） | 🚫 | 🚫 | 🚫 |
 | lower-free 无条件低化 | ✅ occasional（FOOT–STRUT ʊ→ʌ，17c，展唇+低化，[Wikipedia](https://en.wikipedia.org/wiki/FOOT%E2%80%93STRUT_split)） | ⚠️ 建议排除（低化链研究零散） | ✅ **typical**（通俗拉丁语 ŏ→ɔ、ĕ→ɛ 无条件质变，[Britannica](https://www.britannica.com/topic/Romance-languages/Vowels)——与泛语系 rare 形成教学对照） | ⚠️ rare（依据不足） |
-| front-umlaut 前化 | 🚫（i-umlaut 完成于古英语期 <1100；切片含古英语则 typical） | 🚫（无此机制） | ⚠️ 排除 i-umlaut；**法语支 typical**（u→y 无条件前化，[History of French](https://en.wikipedia.org/wiki/History_of_French)）——需法语分支处理 | 🚫 |
+| front-umlaut 前化（条件型） | 🚫（i-umlaut 完成于古英语期 <1100；切片含古英语则 typical） | 🚫（无此机制） | 🚫（无 i-umlaut） | 🚫 |
+| fr-front 无条件前化（2026-08 新增） | 🚫 | 🚫 | ✅ **typical**（古法语 u→y，sûr < *securus；o→ø，fleur < flōrem——教科书级铁证；泛语系 rare，[History of French](https://en.wikipedia.org/wiki/History_of_French)） | 🚫 |
 | back-a 后化 | ⚠️ rare（BATH 后化在 18c，切片外） | ⚠️ rare（共时 [ɑ] 变体非历时音变） | ✅ occasional（法语部分地区 a→ɑ） | ⚠️ rare（依据不足） |
 | reduce 弱化 | ✅ **typical**（非重读 schwa，[Minkova, final vowels in English](https://varieng.helsinki.fi/series/volumes/16/minkova/)） | ✅ occasional（轻声央化，如"哥哥" kɤ→kə） | ✅ occasional（意大利语弱化弱；法语 e caduc 是支内典型） | ✅ **typical**（аканье：非重读 o/a→a→ə，[Wikipedia Akanye](https://en.wikipedia.org/wiki/Akanye)） |
 | diph-long 长元音复化 | ✅ **typical**（GVS iː→aɪ、uː→aʊ、eː→eɪ，14–17c） | 🚫（官话无音位长短） | 🚫（音位长度在通俗拉丁语已丢失） | 🚫（晚期共同斯拉夫语长度丢失） |

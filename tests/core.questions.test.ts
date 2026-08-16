@@ -132,12 +132,46 @@ describe('语系模式（family）', () => {
     }
   });
 
+  it('铁据恢复：斯拉夫史可出高化题（乌克兰语 ě→i），频率题仍禁用（单档）', () => {
+    // 类型题/系统题可抽到 raise
+    let sawRaise = false;
+    for (let i = 0; i < 300 && !sawRaise; i++) {
+      const q = genTypeQuestion('hard', 'slavic');
+      if (q?.rule.id === 'raise') sawRaise = true;
+    }
+    expect(sawRaise).toBe(true);
+    // 频率题依旧单档（raise/reduce/mono 均 typical）→ null
+    for (let i = 0; i < 30; i++) {
+      expect(genFreqQuestion('hard', 'slavic')).toBeNull();
+    }
+    expect(freqAvailableFor('slavic')).toBe(false);
+  });
+
+  it('铁据新增：罗曼史无条件前化（fr-front）可出题且为典型档', () => {
+    expect(ruleTierFor(RULES.find((r) => r.id === 'fr-front')!, 'romance')).toBe('typical');
+    expect(ruleExcludedFor(RULES.find((r) => r.id === 'fr-front')!, 'romance')).toBe(false);
+    let sawFront = false;
+    for (let i = 0; i < 300 && !sawFront; i++) {
+      const q = genFreqQuestion('easy', 'romance');
+      if (q?.rule.id === 'fr-front') {
+        expect(q.answer).toBe('typical');
+        sawFront = true;
+      }
+    }
+    expect(sawFront).toBe(true);
+    // 泛语系下它是罕见档
+    expect(ruleTierFor(RULES.find((r) => r.id === 'fr-front')!, 'generic')).toBe('rare');
+  });
+
   it('频率题可用性：泛语系/英语史/汉语史/罗曼史可用，斯拉夫史禁用（单档）', () => {
     expect(freqAvailableFor('generic')).toBe(true);
     expect(freqAvailableFor('english')).toBe(true);
     expect(freqAvailableFor('chinese')).toBe(true);
     expect(freqAvailableFor('romance')).toBe(true);
     expect(freqAvailableFor('slavic')).toBe(false);
+  });
+
+  it('汉语史频率题：可出题规则集合 = 高化/弱化/短高元音复化（easy 档位覆盖为 typical）', () => {
   });
 
   it('汉语史频率题：可出题规则集合 = 高化/弱化/短高元音复化（easy 档位覆盖为 typical）', () => {

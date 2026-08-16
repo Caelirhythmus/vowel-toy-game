@@ -104,6 +104,15 @@ describe('规则应用（构造用例）', () => {
     expect(applyRule(r, W(V('jɛ', false, true), V('a'), 0), 0)?.v[0].s).toBe('ɛ');
     expect(applyRule(r, W(V('wɔ', false, true), V('a'), 0), 0)?.v[0].s).toBe('ɔ');
   });
+
+  it('无条件前化（fr-front）：u→y、o→ø；长元音保留；不含 a（避免与高化歧义）', () => {
+    const r = rId('fr-front');
+    expect(applyRule(r, W(V('u'), V('a'), 0), 0)?.v[0].s).toBe('y');
+    expect(applyRule(r, W(V('o'), V('a'), 0), 0)?.v[0].s).toBe('ø');
+    expect(applyRule(r, W(V('u', true), V('a'), 0), 0)?.v[0]).toEqual({ s: 'y', long: true, diph: false });
+    expect(ruleCanApply(r, W(V('a'), V('a'), 0), 0)).toBe(false);
+    expect(ruleCanApply(r, W(V('i'), V('a'), 0), 0)).toBe(false);
+  });
 });
 
 describe('规则变换产物合法性（抽样）', () => {
