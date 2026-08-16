@@ -18,12 +18,13 @@
 - **教学反馈**：答对后展示类型、频率、说明与实例卡片；答错保留原题重试
 - **发音播放**：
   - 元音符号：**权威录音**（Wikimedia Commons 15 个单元音，CC BY-SA 3.0，自托管 WAV，逐文件署名见 `public/audio/ATTRIBUTIONS.txt`）
-  - 词形（伪词）主引擎：**Piper 神经 TTS**（VITS，显式音素 id 输入，保证每个元音精确可控；CC0 音色 en_US-joe-medium + onnxruntime-web，均离线运行；默认 int8 量化模型 ~18MB，首次点播即下载）
+  - 词形（伪词）主引擎：**Piper 神经 TTS**（VITS，显式音素 id 输入，保证每个元音精确可控；CC0 音色 en_US-joe-medium + onnxruntime-web，均离线运行；桌面 float 原版、移动 int8 量化，通过 npm 语音包分发）
   - 回退：**espeak-ng WASM 合成**（共振峰合成，近似；en-us 音色缺 [y ø œ a] 时就近近似）
   - 复元音：无权威录音，不提供发音（图上仅标注）
   - 浏览器 TTS 仅作最后兜底（近似拼写朗读，不读 IPA 原文）
-  - 首次使用体验：点“开始”即后台预热 Piper（下载/加载 ~28MB 模型，仅一次）；
-    加载期间发音按钮显示“语音模型加载中…”，就绪后自动恢复
+  - 首次使用体验：页面打开即后台预热 Piper（模型仅下载一次，缓存后免下载；
+    桌面约 20~40 秒、移动约 10 秒，视网络而定）；加载期间发音按钮显示
+    “语音模型加载中…”，就绪后自动恢复
   - 第三方许可见 `THIRD_PARTY_NOTICES.md`；`npm run vendor` 预置全部离线资源（espeak-ng / onnxruntime-web / piper 模型）
 - **自托管 IPA 字体**（Charis SIL 子集 woff2，SIL OFL 许可）：消除跨平台 ɛ/æ/ø/ə 渲染差异
 - **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计
@@ -84,7 +85,7 @@ npm run preview      # 本地预览构建产物
 
 ## 测试
 
-`npm run test`（28 项）覆盖：
+`npm run test` 覆盖：
 
 - 规则应用正确性（9 条规则构造用例：环境匹配、长元音保持、边界不适用）
 - 题型生成不变量（无 A==B、系统题必有变化与未变化词、答案与计算一致）

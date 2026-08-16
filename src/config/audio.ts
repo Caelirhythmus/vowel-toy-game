@@ -72,7 +72,8 @@ export const ESPEAK_CONSONANTS: Record<string, string> = {
 
 /** 模型源候选：parts=分片列表 / url=单文件 / tgz=需解压的 npm 包 tarball
  *  （绝对 URL 直接用，相对路径以站点根归一化）；
- *  chinaOnly=true 表示仅国内 IP 使用 */
+ *  chinaOnly=true 表示仅国内 IP 使用——当前无候选使用此标记
+ *  （Gitee 实测不可用已移除；未来接入国内渠道时需在 piper.ts 恢复 IP 检测） */
 export interface ModelCandidate {
   label: string;
   timeoutMs: number;
