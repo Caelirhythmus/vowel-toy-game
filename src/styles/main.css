@@ -936,6 +936,12 @@ select:disabled {
   margin-left: 0;
 }
 
+/* 规则名列：与类型列区分（同一类型下多条规则各占一行） */
+.cheatsheet .rule-name {
+  color: #182848;
+  font-weight: 600;
+}
+
 /* ---------- 弹窗 ---------- */
 .modal {
   position: fixed;
