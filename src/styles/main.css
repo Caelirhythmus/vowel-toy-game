@@ -631,9 +631,83 @@ header .subtitle {
     padding: 8px 10px;
   }
 
-  .theme-btn .theme-label {
+  .theme-btn .theme-label,
+  .theme-btn .caret {
     display: none;
   }
+}
+
+/* ---------- 徽章配色选择器（header 下拉菜单） ---------- */
+.tier-color-wrap {
+  position: relative;
+}
+
+.tier-color-btn .caret {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.tier-color-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 210px;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 12px 28px rgba(20, 40, 80, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tier-color-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tier-color-item:hover {
+  background: var(--accent-soft);
+}
+
+.tier-color-item.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* 三档主色预览点 */
+.tier-swatch {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.tier-swatch span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.tier-check {
+  margin-left: auto;
+  font-weight: 800;
+  color: var(--accent);
 }
 
 /* ---------- 主体：双栏布局（答题闭环 + 粘性参考列） ---------- */
@@ -1359,13 +1433,15 @@ select:disabled {
 }
 
 /* ============================================================
- * 频率徽章风格方案（sky 主题多方案对比，设置面板切换）
- * 方案 A「user」= 上方默认规则（实色填充白字）
- * 以下方案均限定 [data-theme='sky']：切到其他主题自动回默认
+ * 频率徽章形态 × 配色方案（sky 主题，header 双按钮切换）
+ * 形态：user（上方默认实色规则）/ glass / outline
+ * 配色：--tier-* 变量组（默认紫蓝；其余见下方
+ * [data-tier-color='xxx'] 覆盖块，含 -deep 深字版）
+ * 全部限定 [data-theme='sky']：切到其他主题自动回各自默认
  * ============================================================ */
 
-/* 方案 B「glass」玻璃：半透明彩色玻璃底 + 模糊 + 同色系深字，
-   与全站玻璃拟态语言统一 */
+/* 方案「glass」玻璃：半透明彩色玻璃底（color-mix 取配色主色
+   18% 透明）+ 模糊 + 同色系深字，与全站玻璃拟态语言统一 */
 [data-theme='sky'][data-tier-style='glass'] .tier-badge {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -1374,70 +1450,122 @@ select:disabled {
 }
 
 [data-theme='sky'][data-tier-style='glass'] .tier-typical {
-  background: rgba(151, 123, 171, 0.18);
+  background: color-mix(in srgb, var(--tier-typical-bg) 18%, transparent);
   color: var(--tier-typical-deep);
 }
 
 [data-theme='sky'][data-tier-style='glass'] .tier-occasional {
-  background: rgba(95, 127, 208, 0.18);
+  background: color-mix(in srgb, var(--tier-occasional-bg) 18%, transparent);
   color: var(--tier-occasional-deep);
 }
 
 [data-theme='sky'][data-tier-style='glass'] .tier-rare {
-  background: rgba(18, 121, 226, 0.2);
+  background: color-mix(in srgb, var(--tier-rare-bg) 20%, transparent);
   color: var(--tier-rare-deep);
 }
 
-/* 方案 C「dot」色点：中性浅底 + 前置彩色圆点 + 中性深字，
-   档位信息压缩到最小色块，最不喧宾夺主 */
-[data-theme='sky'][data-tier-style='dot'] .tier-badge {
-  background: var(--glass-bg-card);
-  border: 1px solid var(--glass-border-soft);
-  color: var(--ink-soft);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-[data-theme='sky'][data-tier-style='dot'] .tier-badge::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-[data-theme='sky'][data-tier-style='dot'] .tier-typical::before {
-  background: var(--tier-typical-bg);
-}
-
-[data-theme='sky'][data-tier-style='dot'] .tier-occasional::before {
-  background: var(--tier-occasional-bg);
-}
-
-[data-theme='sky'][data-tier-style='dot'] .tier-rare::before {
-  background: var(--tier-rare-bg);
-}
-
-/* 方案 D「outline」描边：透明底 + 彩色描边 + 彩色深字，线性轻盈 */
+/* 方案「outline」描边：透明底 + 配色主色描边 + 同色系深字，线性轻盈 */
 [data-theme='sky'][data-tier-style='outline'] .tier-badge {
   background: transparent;
   border: 1.5px solid;
 }
 
 [data-theme='sky'][data-tier-style='outline'] .tier-typical {
-  border-color: #c3b3d6;
+  border-color: var(--tier-typical-bg);
   color: var(--tier-typical-deep);
 }
 
 [data-theme='sky'][data-tier-style='outline'] .tier-occasional {
-  border-color: #8ba3dd;
+  border-color: var(--tier-occasional-bg);
   color: var(--tier-occasional-deep);
 }
 
 [data-theme='sky'][data-tier-style='outline'] .tier-rare {
-  border-color: #5fa5ef;
+  border-color: var(--tier-rare-bg);
   color: var(--tier-rare-deep);
+}
+
+/* ============================================================
+ * 频率徽章配色方案（sky 专属覆盖 --tier-* 变量）
+ * 默认「紫蓝」定义在 :root（sky 主题块），无需覆盖
+ * ============================================================ */
+
+/* 单色蓝：同一蓝相，明度阶梯——罕见最深最醒目 */
+[data-theme='sky'][data-tier-color='mono'] {
+  --tier-typical-bg: #a8cdf0;
+  --tier-typical-ink: #fff;
+  --tier-typical-deep: #3a7cc0;
+  --tier-occasional-bg: #5f9fe0;
+  --tier-occasional-ink: #fff;
+  --tier-occasional-deep: #2f63ad;
+  --tier-rare-bg: #1a5fa8;
+  --tier-rare-ink: #fff;
+  --tier-rare-deep: #123e70;
+}
+
+/* 光谱：紫→蓝→青冷色渐变，跨度大辨识度高 */
+[data-theme='sky'][data-tier-color='spectral'] {
+  --tier-typical-bg: #9d7fd8;
+  --tier-typical-ink: #fff;
+  --tier-typical-deep: #6a4fb8;
+  --tier-occasional-bg: #5b8de0;
+  --tier-occasional-ink: #fff;
+  --tier-occasional-deep: #3a63b8;
+  --tier-rare-bg: #17a8c4;
+  --tier-rare-ink: #fff;
+  --tier-rare-deep: #0d7d94;
+}
+
+/* 自然：绿→青→蓝，清新自然 */
+[data-theme='sky'][data-tier-color='nature'] {
+  --tier-typical-bg: #5fbf8f;
+  --tier-typical-ink: #fff;
+  --tier-typical-deep: #2e8f63;
+  --tier-occasional-bg: #3f9fd1;
+  --tier-occasional-ink: #fff;
+  --tier-occasional-deep: #2272a8;
+  --tier-rare-bg: #2f6fc0;
+  --tier-rare-ink: #fff;
+  --tier-rare-deep: #1c4e92;
+}
+
+/* 暖警示：琥珀→橙→红，罕见=最强烈的警示感 */
+[data-theme='sky'][data-tier-color='warm'] {
+  --tier-typical-bg: #d9a13b;
+  --tier-typical-ink: #fff;
+  --tier-typical-deep: #a8741e;
+  --tier-occasional-bg: #d96f2e;
+  --tier-occasional-ink: #fff;
+  --tier-occasional-deep: #a84c1a;
+  --tier-rare-bg: #c9433c;
+  --tier-rare-ink: #fff;
+  --tier-rare-deep: #962a26;
+}
+
+/* 马卡龙：粉彩低饱和 + 深字，柔和精致 */
+[data-theme='sky'][data-tier-color='pastel'] {
+  --tier-typical-bg: #d6c3ef;
+  --tier-typical-ink: #5a4590;
+  --tier-typical-deep: #6a55a8;
+  --tier-occasional-bg: #bfd9f5;
+  --tier-occasional-ink: #2f5f9e;
+  --tier-occasional-deep: #3a6fb8;
+  --tier-rare-bg: #bfe8dd;
+  --tier-rare-ink: #1f7a66;
+  --tier-rare-deep: #268f78;
+}
+
+/* 红绿灯：经典语义——绿=常见通行、黄=留意、红=警示 */
+[data-theme='sky'][data-tier-color='traffic'] {
+  --tier-typical-bg: #43a86e;
+  --tier-typical-ink: #fff;
+  --tier-typical-deep: #1f7a4c;
+  --tier-occasional-bg: #d9a13b;
+  --tier-occasional-ink: #fff;
+  --tier-occasional-deep: #a8741e;
+  --tier-rare-bg: #d04a4a;
+  --tier-rare-ink: #fff;
+  --tier-rare-deep: #9e2f2f;
 }
 
 .example-card {

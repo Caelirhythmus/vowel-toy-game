@@ -35,11 +35,11 @@ describe('useTierStyle 风格切换', () => {
 
   it('setStyle：更新属性 + 持久化 localStorage', async () => {
     const ts = await freshStyle();
-    ts.setStyle('glass');
-    expect(ts.style.value).toBe('glass');
-    expect(document.documentElement.dataset.tierStyle).toBe('glass');
+    ts.setStyle('outline');
+    expect(ts.style.value).toBe('outline');
+    expect(document.documentElement.dataset.tierStyle).toBe('outline');
     const saved = JSON.parse(localStorage.getItem('vl.tierStyle') ?? '{}');
-    expect(saved.style).toBe('glass');
+    expect(saved.style).toBe('outline');
   });
 
   it('持久化非法值：回退默认风格', async () => {

@@ -64,7 +64,8 @@ export const STORAGE_KEYS = {
   settings: 'vl.settings',
   history: 'vl.history',
   theme: 'vl.theme',
-  tierStyle: 'vl.tierStyle'
+  tierStyle: 'vl.tierStyle',
+  tierColor: 'vl.tierColor'
 } as const;
 
 export interface HistoryEntry {

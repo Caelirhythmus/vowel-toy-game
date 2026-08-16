@@ -7,6 +7,8 @@ import { speechService } from '@/services/audio';
 import { applicablePositions, applyRule, wordText } from '@/core';
 import LangToggle from '@/components/LangToggle.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
+import TierStyleToggle from '@/components/TierStyleToggle.vue';
+import TierColorPicker from '@/components/TierColorPicker.vue';
 import SettingsPanel from '@/components/SettingsPanel.vue';
 import TimerBar from '@/components/TimerBar.vue';
 import QuestionArea from '@/components/QuestionArea.vue';
@@ -96,6 +98,8 @@ onUnmounted(() => {
           <p class="subtitle">{{ t('app.subtitle') }}</p>
         </div>
         <div class="header-actions">
+          <TierColorPicker />
+          <TierStyleToggle />
           <ThemeToggle />
           <LangToggle />
         </div>
