@@ -78,6 +78,18 @@ export interface Rule {
   name: LocalizedText;
   desc: LocalizedText;
   sysDesc: LocalizedText;
+  /**
+   * 语系/地域倾向说明：同一演变在不同语系中的频率与触发条件不同
+   * （如弱化多见于重音语言；i-umlaut 集中于日耳曼语）。
+   * 必填：教学上“泛语系平均”的档位需要语系视角的补充说明。
+   */
+  familyNote: LocalizedText;
+  /**
+   * 语系上下文频率覆盖（架构预留，暂未启用）：
+   * 未来“语系模式”玩法按 family 覆盖 tier（同一规则在英语史/
+   * 汉语史/罗曼史中的档位可能不同）。启用前需逐条文献审慎定档。
+   */
+  familyTiers?: { family: string; tier: Tier }[];
   /** 输入词内元音，返回新元音或 null（不适用） */
   transform: (v: WordVowel) => WordVowel | null;
   examples: RuleExample[];

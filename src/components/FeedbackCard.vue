@@ -18,6 +18,8 @@ const tierName = (id: string) => TIER_OPTIONS.find((x) => x.id === id)?.[lang.va
 const ruleName = computed(() => (q.value ? q.value.rule.name[lang.value] : ''));
 const ruleDesc = computed(() => (q.value ? q.value.rule.desc[lang.value] : ''));
 const tierId = computed(() => (q.value ? q.value.rule.tier : null));
+/** 语系倾向说明（同类型在不同语系中的频率/触发差异） */
+const familyNote = computed(() => (q.value ? q.value.rule.familyNote[lang.value] : ''));
 
 const envLabel = computed(() => {
   if (!q.value) return '';
@@ -65,6 +67,7 @@ const systemLines = computed(() => {
           <span v-if="tierId" class="tier-badge" :class="'tier-' + tierId">{{ tierName(tierId) }}</span>
         </div>
         <div class="fb-line"><strong>{{ t('fb.desc') }}：</strong>{{ ruleDesc }}</div>
+        <div class="fb-line"><strong>{{ t('fb.family') }}：</strong>{{ familyNote }}</div>
         <div class="fb-line"><strong>{{ t('fb.example') }}：</strong></div>
         <div v-for="ex in q.rule.examples" :key="ex.text" class="example-card">
           <div class="ex-text">{{ ex.text }}</div>

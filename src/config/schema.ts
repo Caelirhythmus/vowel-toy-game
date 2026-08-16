@@ -28,6 +28,12 @@ const ruleMetaSchema = z.object({
   name: localized,
   desc: localized,
   sysDesc: localized,
+  /** 语系倾向说明必填：每条规则都要有“泛语系平均”之外的视角 */
+  familyNote: localized,
+  /** 语系上下文频率覆盖（预留字段）：family 非空、tier 必须合法 */
+  familyTiers: z
+    .array(z.object({ family: z.string().min(1), tier: z.enum(TIER_IDS as [string, ...string[]]) }))
+    .optional(),
   examples: z.array(z.object({ text: z.string().min(1), srcZh: z.string().min(1), srcEn: z.string().min(1) })).min(1)
 });
 

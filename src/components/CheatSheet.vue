@@ -20,7 +20,8 @@ const rows = computed(() =>
       rule: r.name[lang.value],
       ex: r.examples.map((e) => e.text).join('、') || '—',
       env: r.env ? (lang.value === 'zh' ? r.env.labelZh : r.env.labelEn) : t('q.env.none'),
-      tier: r.tier
+      tier: r.tier,
+      family: r.familyNote[lang.value]
     }))
   )
 );
@@ -35,6 +36,7 @@ const rows = computed(() =>
         <th>示例 · Examples</th>
         <th>{{ t('q.env') }}</th>
         <th>{{ t('fb.tier') }}</th>
+        <th>{{ t('fb.family') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -47,6 +49,7 @@ const rows = computed(() =>
           <span v-if="row.tier" class="tier-badge" :class="'tier-' + row.tier">{{ tierName(row.tier) }}</span>
           <span v-else>—</span>
         </td>
+        <td class="family-note">{{ row.family }}</td>
       </tr>
     </tbody>
   </table>

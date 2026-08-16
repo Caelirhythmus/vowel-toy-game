@@ -14,6 +14,10 @@ export const RULES: Rule[] = [
       en: 'Tongue height rises and jaw opening decreases (e.g. a→æ→ɛ→e→i). Very common in chain shifts; the classic “vowel raising” tendency in Chinese historical phonology.'
     },
     sysDesc: { zh: '元音高化（开口度减小）', en: 'Vowel raising (smaller opening)' },
+    familyNote: {
+      zh: '高化跨语言普遍；汉语史研究传统尤重此倾向（王力）',
+      en: 'Raising is common cross-linguistically; Chinese historical phonology has long emphasized it (Wang Li)'
+    },
     transform: (v) => {
       const b = resolveVowel(v);
       if (!b || v.s === 'ə' || v.diph) return null;
@@ -33,6 +37,10 @@ export const RULES: Rule[] = [
       en: 'Stressed u lowers to o when the next syllable contains a. A typical conditioned lowering.'
     },
     sysDesc: { zh: '重读音节的 u → o（后接 a 音节）', en: 'stressed u → o before a-syllable' },
+    familyNote: {
+      zh: 'a-mutation 是日耳曼语的特征机制',
+      en: 'a-mutation is a hallmark of Germanic'
+    },
     transform: (v) => {
       if (v.s === 'u' && !v.long) return { s: 'o', long: false, diph: false };
       return null;
@@ -49,6 +57,10 @@ export const RULES: Rule[] = [
       en: 'Unconditioned lowering. Real but far less common than raising, e.g. Vulgar Latin ŏ→ɔ (Italian forte).'
     },
     sysDesc: { zh: '元音低化（开口度增大）', en: 'Vowel lowering (larger opening)' },
+    familyNote: {
+      zh: '无条件低化各语系皆罕见；罗曼语的低化多为条件性（重读开音节）',
+      en: 'Unconditioned lowering is rare everywhere; Romance lowering is usually conditioned (stressed open syllables)'
+    },
     transform: (v) => {
       const b = resolveVowel(v);
       if (!b || v.s === 'ə' || v.diph) return null;
@@ -67,6 +79,10 @@ export const RULES: Rule[] = [
       en: 'Back vowels front (often raising too) before a following i/j: u→y, o→ø, a→æ. A typical environment-triggered change.'
     },
     sysDesc: { zh: '后元音前化（后接 i）', en: 'back vowels front before i' },
+    familyNote: {
+      zh: 'i-umlaut 型前化集中于日耳曼语；法语 u→y 是无条件前化的著名特例',
+      en: 'i-umlaut fronting clusters in Germanic; French u→y is a famous unconditioned case'
+    },
     transform: (v) => {
       if (v.diph || v.s === 'ə') return null;
       // i-umlaut 的直接结果是 æ（Gast/Gäste、man/men 的古英语 æ）；
@@ -87,6 +103,10 @@ export const RULES: Rule[] = [
       en: 'Tongue retracts, e.g. a→ɑ. Occasional cross-linguistically; often co-occurs with lowering/rounding.'
     },
     sysDesc: { zh: '元音后化（舌位后移）', en: 'Vowel backing' },
+    familyNote: {
+      zh: '后化见于法语等罗曼语变体与部分斯拉夫语',
+      en: 'Backing occurs in French/Romance varieties and some Slavic languages'
+    },
     transform: (v) => {
       const b = resolveVowel(v);
       if (!b || v.s === 'ə' || v.diph) return null;
@@ -105,6 +125,10 @@ export const RULES: Rule[] = [
       en: 'Unstressed vowels centralize to ə. Reduction almost only affects unstressed syllables.'
     },
     sysDesc: { zh: '非重读元音 → ə', en: 'unstressed vowels → ə' },
+    familyNote: {
+      zh: '弱化多见于重音语言（英/德/俄）；音节计时语言（西/意/日）少得多',
+      en: 'Reduction thrives in stress-timed languages (En/De/Ru); far less in syllable-timed ones (Es/It/Ja)'
+    },
     transform: (v) => {
       if (v.diph || v.s === 'ə') return null;
       return { s: 'ə', long: false, diph: false };
@@ -122,6 +146,10 @@ export const RULES: Rule[] = [
       en: 'Long vowels break into diphthongs: iː→aɪ, uː→aʊ, eː→eɪ, oː→əʊ. A hallmark of the Great Vowel Shift.'
     },
     sysDesc: { zh: '长元音复元音化', en: 'long vowels diphthongize' },
+    familyNote: {
+      zh: '长元音复化是英语元音大推移的标志；德语、荷兰语史亦有',
+      en: 'Long-vowel breaking marks the English GVS; also in German and Dutch history'
+    },
     transform: (v) => {
       const map: Record<string, string> = { i: 'aɪ', u: 'aʊ', e: 'eɪ', o: 'əʊ' };
       const t = v.long && map[v.s] ? map[v.s] : null;
@@ -139,6 +167,10 @@ export const RULES: Rule[] = [
       en: 'Short high vowels break: i→eɪ, u→oʊ. Known as “high-vowel breaking” in some Chinese dialects (Jinan i→ei, u→ou).'
     },
     sysDesc: { zh: '短高元音复化 i→eɪ、u→oʊ', en: 'short high vowels break' },
+    familyNote: {
+      zh: '短高元音复化集中于汉语官话方言',
+      en: 'Short high-vowel breaking concentrates in Mandarin dialects'
+    },
     transform: (v) => {
       // 汉语高元音复化的 ou 起点是后元音 o（[ou]），不是英式 goat 的央起点 əʊ
       const map: Record<string, string> = { i: 'eɪ', u: 'oʊ' };
@@ -158,6 +190,10 @@ export const RULES: Rule[] = [
       en: 'Diphthongs merge into monophthongs: aɪ→e, aʊ→o. E.g. Classical Latin ae→e.'
     },
     sysDesc: { zh: '复元音单元音化', en: 'diphthongs monophthongize' },
+    familyNote: {
+      zh: '单元音化在拉丁语、希腊语、英语史均常见，跨语系普遍',
+      en: 'Monophthongization recurs in Latin, Greek and English history — widespread'
+    },
     transform: (v) => {
       const map: Record<string, string> = { aɪ: 'e', aʊ: 'o', eɪ: 'e', əʊ: 'o', oʊ: 'o' };
       const t = v.diph ? map[v.s] : null;

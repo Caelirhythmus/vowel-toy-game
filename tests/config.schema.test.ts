@@ -22,6 +22,23 @@ describe('内容配置校验', () => {
     expect(validateRules(bad).length).toBeGreaterThan(0);
   });
 
+  it('缺 familyNote（语系倾向必填）报错', () => {
+    const bad = RULES.map((r, i) => {
+      const { familyNote, ...rest } = r;
+      return i === 0 ? (rest as (typeof RULES)[number]) : r;
+    });
+    expect(validateRules(bad).length).toBeGreaterThan(0);
+  });
+
+  it('familyTiers 预留字段：tier 非法报错、合法通过', () => {
+    const ok = RULES.map((r, i) =>
+      i === 0 ? { ...r, familyTiers: [{ family: 'germanic', tier: 'typical' as const }] } : r
+    );
+    expect(validateRules(ok)).toEqual([]);
+    const bad = RULES.map((r, i) => (i === 0 ? { ...r, familyTiers: [{ family: 'germanic', tier: 'legendary' as never }] } : r));
+    expect(validateRules(bad).length).toBeGreaterThan(0);
+  });
+
   it('元音池校验通过', () => {
     expect(validateVowels()).toEqual([]);
   });
