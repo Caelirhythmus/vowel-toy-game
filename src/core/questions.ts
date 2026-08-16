@@ -52,12 +52,18 @@ export function genTypeQuestion(difficulty: Difficulty, family = 'generic'): Pai
  * 频率题：分层抽样——先均匀抽档位，再从该档规则池抽规则。
  * 关键：不能直接按规则权重抽（easy 池全为 typical 时答案恒为“典型”，
  * 玩家无脑点选即可全对；hard 池 6:2:1 也严重偏斜）。
- * 分层后答案分布完全均衡：easy 两档（典型/偶见）、hard 三档。
- * 语系模式：档位按 familyTiers 覆盖，池按 familyExcluded 过滤。
+ * 语系模式：档位按 familyTiers 覆盖，池按 familyExcluded 过滤；
+ * 只从该语系【非空】档位抽样（如斯拉夫史只有 typical 档），
+ * 非空档位不足两档时频率题无区分度，返回 null 由调用方兜底。
  */
 export function genFreqQuestion(difficulty: Difficulty, family = 'generic'): PairQuestion | null {
-  const tiers: Tier[] =
+  const want: Tier[] =
     difficulty === 'easy' ? ['typical', 'occasional'] : ['typical', 'occasional', 'rare'];
+  // 语系实际非空档位（排除矩阵 + 档位覆盖后）
+  const tiers = want.filter((tier) =>
+    RULES.some((r) => !ruleExcludedFor(r, family) && ruleTierFor(r, family) === tier)
+  );
+  if (tiers.length < 2) return null; // 单档语系（如斯拉夫史）无区分度
   const tier = pick(tiers);
   const pool = RULES.filter(
     (r) => !ruleExcludedFor(r, family) && ruleTierFor(r, family) === tier
@@ -101,7 +107,8 @@ export function genQuestion(
     else k = 'system';
   }
   if (k === 'type') return genTypeQuestion(difficulty, family);
-  if (k === 'freq') return genFreqQuestion(difficulty, family);
+  // 频率题兜底（单档语系如斯拉夫史无区分度时）：退化为类型题，保证永远有题
+  if (k === 'freq') return genFreqQuestion(difficulty, family) ?? genTypeQuestion(difficulty, family);
   // 系统题兜底：退化为类型题，保证永远有题可出
   return genSystemQuestion(difficulty, family) ?? genTypeQuestion(difficulty, family);
 }

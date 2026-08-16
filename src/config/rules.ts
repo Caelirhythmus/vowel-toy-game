@@ -22,6 +22,8 @@ export const RULES: Rule[] = [
       { family: 'romance', tier: 'rare' },
       { family: 'slavic', tier: 'rare' }
     ],
+    // 斯拉夫史高化证据弱（矩阵 ⚠️），排除出题
+    familyExcluded: ['slavic'],
     transform: (v) => {
       const b = resolveVowel(v);
       if (!b || v.s === 'ə' || v.diph) return null;

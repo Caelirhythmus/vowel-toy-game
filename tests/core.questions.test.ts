@@ -145,4 +145,29 @@ describe('语系模式（family）', () => {
     expect(ids.has('front-umlaut')).toBe(false);
     expect(ids.has('mono')).toBe(false);
   });
+
+  it('回归：单档语系（斯拉夫史）频率题无区分度 → 返回 null，mixed 永远有题（兜底类型题）', () => {
+    // 斯拉夫史只有 typical 档（reduce/mono），频率题应为 null
+    for (let i = 0; i < 50; i++) {
+      expect(genFreqQuestion('hard', 'slavic')).toBeNull();
+      expect(genFreqQuestion('easy', 'slavic')).toBeNull();
+    }
+    // 但 mixed 模式绝不空：freq 兜底为类型题
+    for (let i = 0; i < 300; i++) {
+      const q = genQuestion('mixed', 'hard', 'slavic');
+      expect(q).not.toBeNull();
+    }
+  });
+
+  it('回归：档位不全的语系（英语史无 rare）hard 频率题只出非空档位', () => {
+    const answers = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      const q = genFreqQuestion('hard', 'english');
+      expect(q).not.toBeNull();
+      if (q) answers.add(q.answer);
+    }
+    expect(answers.has('typical')).toBe(true);
+    expect(answers.has('occasional')).toBe(true);
+    expect(answers.has('rare')).toBe(false); // 英语史无 rare 规则
+  });
 });
