@@ -191,24 +191,37 @@ function resolveCandidateUrl(u: string): string {
   return /^https?:/i.test(u) ? u : vendorUrl(u);
 }
 
-/** 国内 IP 检测：并行请求国内可达的 IP 归属 API（任一返回“中国”即判定国内）。
- *  3s 超时；失败返回 false（走非国内候选，避免国外/代理场景卡 Gitee）。
+/** 国内 IP 检测：并行请求多个可达的 IP 归属源（任一判定国内即通过）。
+ *  - pconline（GBK 编码，pro 省份字段非空即国内）
+ *  - myip.ipip.net（文本含“中国”）
+ *  - ipinfo.io（country=="CN"）
+ *  3s 超时；全部失败时按浏览器语言兜底（zh → 国内）。
  *  结果模块级缓存（一次会话只检测一次）。 */
 let chinaRegion: boolean | null = null;
 
+const CN_APIS: { url: string; encoding?: string }[] = [
+  { url: 'https://whois.pconline.com.cn/ipJson.jsp?json=true', encoding: 'gbk' },
+  { url: 'https://myip.ipip.net' },
+  { url: 'https://ipinfo.io/json' }
+];
+
 async function isChinaIp(): Promise<boolean> {
   if (chinaRegion !== null) return chinaRegion;
-  const apis = [
-    'https://qifu-api.baidubce.com/ip/local/geo/v1/district',
-    'https://ip.useragentinfo.com/json'
-  ];
   try {
     const results = await Promise.allSettled(
-      apis.map((u) => fetch(u, { signal: AbortSignal.timeout(3000) }).then((r) => r.text()))
+      CN_APIS.map(({ url, encoding }) =>
+        fetch(url, { signal: AbortSignal.timeout(3000) })
+          .then((r) => (r.ok ? r.arrayBuffer() : null))
+          .then((buf) => (buf ? new TextDecoder(encoding ?? 'utf-8').decode(buf) : ''))
+      )
     );
-    chinaRegion = results.some((r) => r.status === 'fulfilled' && /中国|China/i.test(r.value));
+    // “省”只在中文省份地址出现；country "CN" 是 ipinfo 的国家代码
+    chinaRegion = results.some(
+      (r) => r.status === 'fulfilled' && /中国|"country"\s*:\s*"CN"|\u7701/.test(r.value)
+    );
   } catch {
-    chinaRegion = false;
+    // 检测失败：按浏览器语言兜底（本项目用户以中文为主）
+    chinaRegion = /^zh/i.test(navigator.language);
   }
   console.info(`[piper] 国内 IP 检测：${chinaRegion ? '是（Gitee 镜像优先）' : '否（跳过 Gitee）'}`);
   return chinaRegion;
