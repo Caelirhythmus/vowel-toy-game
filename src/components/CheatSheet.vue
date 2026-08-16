@@ -2,32 +2,48 @@
 import { computed } from 'vue';
 import { RULES } from '@/config/rules';
 import { TIER_OPTIONS, TYPE_OPTIONS } from '@/config/game';
+import { FAMILIES, ruleExcludedFor, ruleTierFor } from '@/config/families';
 import { useI18n } from '@/composables/useI18n';
+import { useGame } from '@/composables/useGame';
 
 const { t, lang } = useI18n();
+const game = useGame();
 const tierName = (id: string) => TIER_OPTIONS.find((x) => x.id === id)?.[lang.value] ?? id;
+
+/** 当前语系（非泛语系时显示上下文提示） */
+const famDef = computed(() => {
+  const f = game.state.settings.family;
+  return f !== 'generic' ? (FAMILIES[f as keyof typeof FAMILIES] ?? null) : null;
+});
 
 /**
  * 按【规则】展开（而非按类型聚合）：一行一条规则。
- * 此前按类型聚合时频率列只取该类型第一条规则的档位——
- * 低化类有「a-mutation 型=典型」与「无条件=罕见」两条规则，
- * 表格却只显示“典型”，与频率题（分层抽样后三档均衡）互相矛盾。
+ * 语系模式：只显示该语系可出题的规则（familyExcluded 过滤），
+ * 档位/示例按语系取值（familyTiers / familyExamples），与题目一致。
  */
-const rows = computed(() =>
-  TYPE_OPTIONS.flatMap((type) =>
-    RULES.filter((r) => r.type === type.id).map((r) => ({
-      type: type[lang.value],
-      rule: r.name[lang.value],
-      ex: r.examples.map((e) => e.text).join('、') || '—',
-      env: r.env ? (lang.value === 'zh' ? r.env.labelZh : r.env.labelEn) : t('q.env.none'),
-      tier: r.tier,
-      family: r.familyNote[lang.value]
-    }))
-  )
-);
+const rows = computed(() => {
+  const f = game.state.settings.family;
+  return TYPE_OPTIONS.flatMap((type) =>
+    RULES.filter((r) => r.type === type.id && !ruleExcludedFor(r, f)).map((r) => {
+      const ex =
+        f !== 'generic' && r.familyExamples?.[f] ? r.familyExamples[f] : r.examples;
+      return {
+        type: type[lang.value],
+        rule: r.name[lang.value],
+        ex: ex.map((e) => e.text).join('、') || '—',
+        env: r.env ? (lang.value === 'zh' ? r.env.labelZh : r.env.labelEn) : t('q.env.none'),
+        tier: ruleTierFor(r, f),
+        family: r.familyNote[lang.value]
+      };
+    })
+  );
+});
 </script>
 
 <template>
+  <div v-if="famDef" class="cheatsheet-context">
+    {{ t('set.family') }}：{{ t(famDef.labelKey) }}（{{ lang === 'zh' ? famDef.periodZh : famDef.periodEn }}）· {{ t('cheat.familyScope') }}
+  </div>
   <table class="cheatsheet">
     <thead>
       <tr>

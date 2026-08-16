@@ -942,6 +942,18 @@ select:disabled {
   font-weight: 600;
 }
 
+/* 语系模式下速查表的上下文提示 */
+.cheatsheet-context {
+  font-size: 0.88rem;
+  color: #555;
+  background: #f0f4ff;
+  border: 1px dashed #9db3d3;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
 /* ---------- 弹窗 ---------- */
 .modal {
   position: fixed;
