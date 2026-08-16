@@ -105,7 +105,18 @@
   --tier-rare-ink: #fff;
   --tier-rare-deep: hsl(calc(var(--tier-hue) - 24deg) 39% 32%);
 
+  /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
+  --blob-1: rgba(64, 145, 235, 0.46);
+  --blob-2: rgba(56, 189, 215, 0.38);
+  --blob-3: rgba(140, 160, 235, 0.36);
+  --blob-4: rgba(94, 200, 190, 0.34);
+  --blob-5: rgba(255, 170, 120, 0.22);
+  --blob-6: rgba(180, 140, 235, 0.26);
 
+  /* 漂浮粒子（小柔光点） */
+  --particle-1: rgba(127, 179, 238, 0.5);
+  --particle-2: rgba(95, 208, 216, 0.45);
+  --particle-3: rgba(184, 166, 236, 0.45);
 
   /* 元音图（SVG） */
   --chart-bg: #f6fafe;
@@ -174,7 +185,16 @@
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 25deg;
 
+  --blob-1: rgba(236, 150, 88, 0.4);
+  --blob-2: rgba(250, 190, 150, 0.44);
+  --blob-3: rgba(240, 200, 110, 0.36);
+  --blob-4: rgba(240, 160, 160, 0.32);
+  --blob-5: rgba(120, 170, 230, 0.22);
+  --blob-6: rgba(220, 160, 190, 0.28);
 
+  --particle-1: rgba(245, 176, 126, 0.5);
+  --particle-2: rgba(247, 207, 154, 0.45);
+  --particle-3: rgba(232, 169, 184, 0.45);
 
   --chart-bg: #fffaf4;
   --chart-line: #f0e0cf;
@@ -242,7 +262,16 @@
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 162deg;
 
+  --blob-1: rgba(60, 200, 150, 0.38);
+  --blob-2: rgba(70, 190, 180, 0.34);
+  --blob-3: rgba(140, 210, 120, 0.34);
+  --blob-4: rgba(120, 180, 225, 0.32);
+  --blob-5: rgba(240, 200, 100, 0.24);
+  --blob-6: rgba(160, 140, 220, 0.26);
 
+  --particle-1: rgba(124, 214, 168, 0.5);
+  --particle-2: rgba(134, 216, 196, 0.45);
+  --particle-3: rgba(169, 212, 122, 0.45);
 
   --chart-bg: #f4fbf8;
   --chart-line: #d5ecdf;
@@ -310,7 +339,16 @@
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 256deg;
 
+  --blob-1: rgba(160, 130, 225, 0.4);
+  --blob-2: rgba(200, 150, 220, 0.34);
+  --blob-3: rgba(230, 160, 190, 0.3);
+  --blob-4: rgba(140, 170, 235, 0.32);
+  --blob-5: rgba(250, 200, 130, 0.22);
+  --blob-6: rgba(120, 200, 190, 0.24);
 
+  --particle-1: rgba(183, 161, 230, 0.5);
+  --particle-2: rgba(214, 168, 207, 0.45);
+  --particle-3: rgba(169, 196, 236, 0.45);
 
   --chart-bg: #faf8ff;
   --chart-line: #e2d8f3;
@@ -324,6 +362,142 @@
   --chart-ring-b: rgba(217, 85, 95, 0.16);
 }
 
+/* ---------- 背景装饰层：固定彩色光斑 ---------- */
+.bg-decor {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-decor .blob {
+  position: absolute;
+  border-radius: 50%;
+  /* 柔边内建于渐变，避免 filter: blur 参与逐帧重栅格化 */
+  background: radial-gradient(circle at 30% 30%, var(--blob-color) 0%, transparent 68%);
+  will-change: transform;
+  animation: blob-drift 36s ease-in-out infinite alternate;
+}
+
+.blob-1 {
+  --blob-color: var(--blob-1);
+  width: 72vmax;
+  height: 72vmax;
+  left: -22vmax;
+  top: -18vmax;
+  animation-duration: 36s;
+  animation-delay: -2s;
+}
+
+.blob-2 {
+  --blob-color: var(--blob-2);
+  width: 60vmax;
+  height: 60vmax;
+  right: -20vmax;
+  top: 4vmax;
+  animation-duration: 42s;
+  animation-delay: -13s;
+}
+
+.blob-3 {
+  --blob-color: var(--blob-3);
+  width: 64vmax;
+  height: 64vmax;
+  left: -16vmax;
+  bottom: -22vmax;
+  animation-duration: 39s;
+  animation-delay: -21s;
+}
+
+.blob-4 {
+  --blob-color: var(--blob-4);
+  width: 54vmax;
+  height: 54vmax;
+  right: -14vmax;
+  bottom: -12vmax;
+  animation-duration: 33s;
+  animation-delay: -27s;
+}
+
+/* 点缀光斑：暖/紫色相，打破主冷色系的单调（低饱和低透明，不喧宾夺主） */
+.blob-5 {
+  --blob-color: var(--blob-5);
+  width: 46vmax;
+  height: 46vmax;
+  top: 10%;
+  left: 36%;
+  animation-duration: 28s;
+  animation-delay: -8s;
+}
+
+.blob-6 {
+  --blob-color: var(--blob-6);
+  width: 50vmax;
+  height: 50vmax;
+  bottom: -16vmax;
+  left: -12vmax;
+  animation-duration: 31s;
+  animation-delay: -17s;
+}
+
+@keyframes blob-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5vmax, -4vmax, 0) scale(1.1);
+  }
+}
+
+/* ---------- 漂浮粒子：小柔光点，缓慢升降，为背景加层次 ---------- */
+.bg-decor .particle {
+  position: absolute;
+  border-radius: 50%;
+  /* 柔边内建渐变，动画只动 transform（与光斑同策略） */
+  background: radial-gradient(circle, var(--particle-color) 0%, transparent 72%);
+  will-change: transform;
+  animation: particle-float 24s ease-in-out infinite alternate;
+}
+
+.particle-1 {
+  --particle-color: var(--particle-1);
+  width: 15vmin;
+  height: 15vmin;
+  top: 16%;
+  left: 8%;
+  animation-duration: 22s;
+  animation-delay: -4s;
+}
+
+.particle-2 {
+  --particle-color: var(--particle-2);
+  width: 10vmin;
+  height: 10vmin;
+  top: 62%;
+  right: 7%;
+  animation-duration: 26s;
+  animation-delay: -13s;
+}
+
+.particle-3 {
+  --particle-color: var(--particle-3);
+  width: 19vmin;
+  height: 19vmin;
+  bottom: 16%;
+  left: 32%;
+  animation-duration: 30s;
+  animation-delay: -20s;
+}
+
+@keyframes particle-float {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(2.5vmin, -5vmin, 0);
+  }
+}
 
 * {
   box-sizing: border-box;
@@ -1791,11 +1965,17 @@ select:disabled {
   }
 }
 
-/* 移动端：模糊半径收紧（本机 TTS WASM 已占主线程，减少 GPU 合成压力） */
+/* 移动端：模糊半径收紧 + 光斑静止（本机 TTS WASM 已占主线程，
+   减少持续 GPU 合成压力；reduced-motion 全局块也会一并停掉漂移动画） */
 @media (max-width: 959px) {
   :root {
     --glass-blur: 12px;
     --glass-blur-sm: 6px;
     --glass-blur-xs: 4px;
+  }
+
+  .bg-decor .blob,
+  .bg-decor .particle {
+    animation: none;
   }
 }
