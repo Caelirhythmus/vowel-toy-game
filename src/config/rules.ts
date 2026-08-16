@@ -155,8 +155,8 @@ export const RULES: Rule[] = [
     env: { kind: 'unstressed', labelZh: '非重读', labelEn: 'unstressed' },
     name: { zh: '央化/弱化', en: 'Centralization / Reduction' },
     desc: {
-      zh: '非重读元音央化为 ə。弱化几乎只发生在非重读位置，是所有重音语言的家常便饭。',
-      en: 'Unstressed vowels centralize to ə. Reduction almost only affects unstressed syllables.'
+      zh: '非重读元音央化为 ə。弱化几乎只发生在非重读位置，是所有重音语言的家常便饭（真实弱化常为渐进链 i→ɪ→ə，本规则简化为直接央化）。',
+      en: 'Unstressed vowels centralize to ə. Reduction almost only affects unstressed syllables (real reduction is gradual, i→ɪ→ə; this rule simplifies to direct centralization).'
     },
     sysDesc: { zh: '非重读元音 → ə', en: 'unstressed vowels → ə' },
     familyNote: {

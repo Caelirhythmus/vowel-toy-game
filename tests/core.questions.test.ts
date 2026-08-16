@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { genFreqQuestion, genQuestion, genSystemQuestion, genTypeQuestion } from '@/core/questions';
 import { applicablePositions, ruleCanApply } from '@/core/rules';
-import { wordText } from '@/core/words';
+import { randomWord, wordText } from '@/core/words';
 import { CHANGE_TYPE_IDS, TIER_IDS } from '@/config/game';
 import { FAMILY_IDS, vowelPoolFor, freqAvailableFor } from '@/config/families';
 import { RULES } from '@/config/rules';
@@ -77,6 +77,15 @@ describe('混合题型', () => {
       const q = genQuestion('mixed', 'easy');
       expect(q).not.toBeNull();
       if (q) expect(['type', 'freq', 'system']).toContain(q.kind);
+    }
+  });
+
+  it('音系学约束：重读音节不生成 ə（重读 schwa 违反常识）', () => {
+    for (const fam of FAMILY_IDS) {
+      for (let i = 0; i < 300; i++) {
+        const w = randomWord(fam);
+        expect(w.v[w.stress].s).not.toBe('ə');
+      }
     }
   });
 });

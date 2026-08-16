@@ -13,6 +13,7 @@ const { t } = useI18n();
       <li>{{ t('info.model.l3') }}</li>
       <li>{{ t('info.model.l4') }}</li>
       <li>{{ t('info.model.l5') }}</li>
+      <li>{{ t('info.model.l6') }}</li>
     </ul>
   </details>
 </template>

@@ -10,14 +10,22 @@ import { longProbFor, vowelPoolFor } from '@/config/families';
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-/** 随机 CVCV 词：{c:[c1,c2], v:[v1,v2], stress:0|1}；family 决定元音子集与长短概率 */
+/** 随机 CVCV 词：{c:[c1,c2], v:[v1,v2], stress:0|1}；family 决定元音子集与长短概率
+ * 音系学约束：重读音节不生成 ə——重读 schwa 在绝大多数语言中
+ * 不存在或极罕见（ə 是非重读弱化的产物） */
 export function randomWord(family = 'generic'): Word {
   const pool = vowelPoolFor(family);
   const longProb = longProbFor(family);
+  const stress = Math.random() < 0.5 ? 0 : 1;
+  const mkV = (avoidSchwa: boolean): WordVowel => {
+    let x = mkVowel(pool, longProb);
+    while (avoidSchwa && x.s === 'ə') x = mkVowel(pool, longProb);
+    return x;
+  };
   return {
     c: [pick(CONSONANTS), pick(CONSONANTS)],
-    v: [mkVowel(pool, longProb), mkVowel(pool, longProb)],
-    stress: Math.random() < 0.5 ? 0 : 1
+    v: [mkV(stress === 0), mkV(stress === 1)],
+    stress
   };
 }
 
