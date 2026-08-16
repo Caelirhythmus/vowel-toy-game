@@ -29,6 +29,7 @@ describe('vowelMnemonic 助记符映射', () => {
   it('复元音取组件序列', () => {
     expect(vowelMnemonic({ s: 'aɪ', long: false, diph: true })).toBe('aI');
     expect(vowelMnemonic({ s: 'əʊ', long: false, diph: true })).toBe('@U');
+    expect(vowelMnemonic({ s: 'oʊ', long: false, diph: true })).toBe('oU');
   });
 
   it('未知符号返回 null', () => {

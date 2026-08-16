@@ -27,10 +27,30 @@ describe('规则应用（构造用例）', () => {
     expect(ruleCanApply(r, W(V('u'), V('i'), 0), 0)).toBe(false); // 后接非 a
   });
 
+  it('a-mutation 是向后同化：u 在次音节（前接 a）不适用', () => {
+    const r = rId('lower-a');
+    // 反向语境：a 在首音节、u 在次音节——这不是 a-mutation（回归：曾误判可应用）
+    expect(ruleCanApply(r, W(V('a'), V('u'), 1), 1)).toBe(false);
+    expect(ruleCanApply(r, W(V('u'), V('a'), 0), 0)).toBe(true);
+  });
+
   it('i-umlaut：u→y（后接 i）', () => {
     const r = rId('front-umlaut');
     expect(applyRule(r, W(V('u'), V('i'), 0), 0)?.v[0].s).toBe('y');
     expect(ruleCanApply(r, W(V('u'), V('a'), 0), 0)).toBe(false);
+  });
+
+  it('i-umlaut 是向后同化：u 在次音节（前接 i）不适用', () => {
+    const r = rId('front-umlaut');
+    // 反向语境：i 在首音节、u 在次音节——前向同化不是 i-umlaut
+    expect(ruleCanApply(r, W(V('i'), V('u'), 0), 1)).toBe(false);
+    expect(ruleCanApply(r, W(V('u'), V('i'), 0), 0)).toBe(true);
+  });
+
+  it('i-umlaut：a→æ（æ 是直接结果，e 是后续高化产物）', () => {
+    const r = rId('front-umlaut');
+    expect(applyRule(r, W(V('a'), V('i'), 0), 0)?.v[0].s).toBe('æ');
+    expect(applyRule(r, W(V('ɑ'), V('i'), 0), 0)?.v[0].s).toBe('æ');
   });
 
   it('复元音化：iː→aɪ，短 i 不适用', () => {
@@ -39,9 +59,10 @@ describe('规则应用（构造用例）', () => {
     expect(ruleCanApply(r, W(V('i'), V('a'), 0), 0)).toBe(false);
   });
 
-  it('单元音化：aɪ→e', () => {
+  it('单元音化：aɪ→e；oʊ→o', () => {
     const r = rId('mono');
     expect(applyRule(r, W(V('aɪ', false, true), V('a'), 0), 0)?.v[0].s).toBe('e');
+    expect(applyRule(r, W(V('oʊ', false, true), V('a'), 0), 0)?.v[0].s).toBe('o');
   });
 
   it('高化：a→æ；eː→iː（长元音保持）；i 不再高化', () => {
@@ -63,9 +84,10 @@ describe('规则应用（构造用例）', () => {
     expect(applyRule(r, W(V('a'), V('a'), 0), 0)?.v[0].s).toBe('ɑ');
   });
 
-  it('高元音复化：i→eɪ；uː 不适用', () => {
+  it('高元音复化：i→eɪ、u→oʊ；长音不适用', () => {
     const r = rId('diph-short');
     expect(applyRule(r, W(V('i'), V('a'), 0), 0)?.v[0].s).toBe('eɪ');
+    expect(applyRule(r, W(V('u'), V('a'), 0), 0)?.v[0]).toEqual({ s: 'oʊ', long: false, diph: true });
     expect(ruleCanApply(r, W(V('u', true), V('a'), 0), 0)).toBe(false);
   });
 });

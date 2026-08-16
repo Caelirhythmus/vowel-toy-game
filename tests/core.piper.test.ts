@@ -51,6 +51,7 @@ describe('piperVowelTokens 元音 → Piper 音素名', () => {
     expect(piperVowelTokens({ s: 'aʊ', long: false, diph: true })).toEqual(['a', 'ʊ']);
     expect(piperVowelTokens({ s: 'eɪ', long: false, diph: true })).toEqual(['e', 'ɪ']);
     expect(piperVowelTokens({ s: 'əʊ', long: false, diph: true })).toEqual(['o', 'ʊ']);
+    expect(piperVowelTokens({ s: 'oʊ', long: false, diph: true })).toEqual(['o', 'ʊ']);
   });
 
   it('未知符号返回 null', () => {

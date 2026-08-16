@@ -25,7 +25,9 @@ export const DIPHTHONGS: Record<string, DiphthongDef> = {
   aɪ: { symbol: 'aɪ', start: 'a', labelOffset: { dx: 0.05, dy: -0.06 } },
   aʊ: { symbol: 'aʊ', start: 'a', labelOffset: { dx: 0.07, dy: 0.02 } },
   eɪ: { symbol: 'eɪ', start: 'e', labelOffset: { dx: 0.06, dy: -0.05 } },
-  əʊ: { symbol: 'əʊ', start: 'ə', labelOffset: { dx: -0.05, dy: 0.03 } }
+  əʊ: { symbol: 'əʊ', start: 'ə', labelOffset: { dx: -0.05, dy: 0.03 } },
+  // 汉语高元音复化 u→ou 的起点是后元音 o（区别于英式 goat 的央起点 əʊ）
+  oʊ: { symbol: 'oʊ', start: 'o', labelOffset: { dx: -0.07, dy: 0.07 } }
 };
 
 /** 词生成元音池（含权重：常见前不圆唇元音权重高） */

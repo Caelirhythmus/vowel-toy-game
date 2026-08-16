@@ -23,28 +23,29 @@ export function wordText(w: Word): string {
   return w.stress === 0 ? 'ˈ' + s1 + s2 : s1 + 'ˈ' + s2;
 }
 
-/** 为带环境条件的规则“定向构词”：保证所需语境出现 */
+/** 为带环境条件的规则“定向构词”：保证所需语境出现
+ * 注意：i-umlaut / a-mutation 是“向后同化”——目标元音必须在
+ * 首音节（pos 0），触发元音（i / a）在后一音节；构词必须固定
+ * 这一方向，否则会生成“前接 i / 前有 a”的反向语境 */
 export function makeWordForRule(rule: Rule): Word {
   const word = randomWord();
   const env = rule.env;
   if (!env) return word;
-  const pos = Math.random() < 0.5 ? 0 : 1;
-  const opos = 1 - pos;
   const mk = (s: string, long: boolean, diph = false): WordVowel => ({ s, long, diph });
   switch (env.kind) {
-    case 'stressed-next-a': // 重读 u（短）+ 另一音节 a
-      word.stress = pos as 0 | 1;
-      word.v[opos] = mk('a', false);
-      word.v[pos] = mk('u', false);
+    case 'stressed-next-a': // a-mutation：重读短 u（首音节）+ 后接 a（次音节）
+      word.stress = 0;
+      word.v[1] = mk('a', false);
+      word.v[0] = mk('u', false);
       break;
-    case 'before-i': // 后元音/低元音 + 另一音节 i
+    case 'before-i': // i-umlaut：后元音/低元音（首音节）+ 后接 i（次音节）
       word.stress = Math.random() < 0.5 ? 0 : 1;
-      word.v[opos] = mk('i', false);
-      word.v[pos] = mk(pick(['u', 'o', 'ɔ', 'ɑ', 'a']), Math.random() < 0.3);
+      word.v[1] = mk('i', false);
+      word.v[0] = mk(pick(['u', 'o', 'ɔ', 'ɑ', 'a']), Math.random() < 0.3);
       break;
-    case 'long': // 长元音 iː/uː/eː/oː
+    case 'long': // 长元音 iː/uː/eː/oː（任何位置皆可，与方向无关）
       word.stress = Math.random() < 0.5 ? 0 : 1;
-      word.v[pos] = mk(pick(['i', 'u', 'e', 'o']), true);
+      word.v[Math.random() < 0.5 ? 0 : 1] = mk(pick(['i', 'u', 'e', 'o']), true);
       break;
     case 'unstressed': // 随机词即可（总有非重读位）
       break;

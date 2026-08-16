@@ -45,8 +45,8 @@ export const RULES: Rule[] = [
     id: 'lower-free', type: 'lowering', tier: 'rare', env: null,
     name: { zh: '低化（无条件）', en: 'Lowering (unconditioned)' },
     desc: {
-      zh: '无条件的舌位下降、开口度增大。真实存在但远不如高化常见，如 17 世纪英语 ʊ→ʌ。',
-      en: 'Unconditioned lowering. Real but far less common than raising, e.g. English ʊ→ʌ in the 17th century.'
+      zh: '无条件的舌位下降、开口度增大。真实存在但远不如高化常见，如通俗拉丁语 ŏ→ɔ（意大利语 fɔrte）。',
+      en: 'Unconditioned lowering. Real but far less common than raising, e.g. Vulgar Latin ŏ→ɔ (Italian forte).'
     },
     sysDesc: { zh: '元音低化（开口度增大）', en: 'Vowel lowering (larger opening)' },
     transform: (v) => {
@@ -55,7 +55,7 @@ export const RULES: Rule[] = [
       return byFeatures(b.height - 1, b.back, b.round, v.long);
     },
     examples: [
-      { text: 'ʊ → ʌ', srcZh: '英语 FOOT–STRUT 分裂（约 17 世纪）', srcEn: 'English FOOT–STRUT split (c. 17th c.)' }
+      { text: 'o → ɔ', srcZh: '通俗拉丁语 ŏ→ɔ（意大利语 forte [ˈfɔrte]）', srcEn: 'Vulgar Latin ŏ→ɔ (Italian forte)' }
     ]
   },
   {
@@ -63,13 +63,15 @@ export const RULES: Rule[] = [
     env: { kind: 'before-i', labelZh: '后接 i', labelEn: 'before i' },
     name: { zh: '前化（i-umlaut 型）', en: 'Fronting (i-umlaut type)' },
     desc: {
-      zh: '后元音在后接 i/j 时前化（常伴随高化）：u→y、o→ø、a→e。典型的环境触发音变。',
-      en: 'Back vowels front (often raising too) before a following i/j: u→y, o→ø, a→e. A typical environment-triggered change.'
+      zh: '后元音在后接 i/j 时前化（常伴随高化）：u→y、o→ø、a→æ。典型的环境触发音变。',
+      en: 'Back vowels front (often raising too) before a following i/j: u→y, o→ø, a→æ. A typical environment-triggered change.'
     },
     sysDesc: { zh: '后元音前化（后接 i）', en: 'back vowels front before i' },
     transform: (v) => {
       if (v.diph || v.s === 'ə') return null;
-      const map: Record<string, string> = { u: 'y', o: 'ø', ɔ: 'œ', ɑ: 'æ', a: 'e' };
+      // i-umlaut 的直接结果是 æ（Gast/Gäste、man/men 的古英语 æ）；
+      // e 是之后高化的产物，不属于 umlaut 本身
+      const map: Record<string, string> = { u: 'y', o: 'ø', ɔ: 'œ', ɑ: 'æ', a: 'æ' };
       const t = map[v.s];
       return t ? { s: t, long: v.long, diph: false } : null;
     },
@@ -133,17 +135,19 @@ export const RULES: Rule[] = [
     id: 'diph-short', type: 'diphthongization', tier: 'occasional', env: null,
     name: { zh: '复元音化（高元音复化）', en: 'Diphthongization (high-vowel breaking)' },
     desc: {
-      zh: '短高元音裂化：i→eɪ、u→əʊ。汉语北方方言有“高元音复化”现象。',
-      en: 'Short high vowels break: i→eɪ, u→əʊ. Known as “high-vowel breaking” in some Chinese dialects.'
+      zh: '短高元音裂化：i→eɪ、u→oʊ。汉语北方方言有“高元音复化”现象（济南话等 i→ei、u→ou）。',
+      en: 'Short high vowels break: i→eɪ, u→oʊ. Known as “high-vowel breaking” in some Chinese dialects (Jinan i→ei, u→ou).'
     },
-    sysDesc: { zh: '短高元音复化 i→eɪ、u→əʊ', en: 'short high vowels break' },
+    sysDesc: { zh: '短高元音复化 i→eɪ、u→oʊ', en: 'short high vowels break' },
     transform: (v) => {
-      const map: Record<string, string> = { i: 'eɪ', u: 'əʊ' };
+      // 汉语高元音复化的 ou 起点是后元音 o（[ou]），不是英式 goat 的央起点 əʊ
+      const map: Record<string, string> = { i: 'eɪ', u: 'oʊ' };
       const t = !v.long && map[v.s] ? map[v.s] : null;
       return t ? { s: t, long: false, diph: true } : null;
     },
     examples: [
-      { text: 'i → eɪ', srcZh: '汉语北方方言高元音复化', srcEn: 'high-vowel breaking, N. Chinese dialects' }
+      { text: 'i → eɪ', srcZh: '汉语北方方言高元音复化', srcEn: 'high-vowel breaking, N. Chinese dialects' },
+      { text: 'u → oʊ', srcZh: '汉语北方方言高元音复化', srcEn: 'high-vowel breaking, N. Chinese dialects' }
     ]
   },
   {
@@ -155,7 +159,7 @@ export const RULES: Rule[] = [
     },
     sysDesc: { zh: '复元音单元音化', en: 'diphthongs monophthongize' },
     transform: (v) => {
-      const map: Record<string, string> = { aɪ: 'e', aʊ: 'o', eɪ: 'e', əʊ: 'o' };
+      const map: Record<string, string> = { aɪ: 'e', aʊ: 'o', eɪ: 'e', əʊ: 'o', oʊ: 'o' };
       const t = v.diph ? map[v.s] : null;
       return t ? { s: t, long: false, diph: false } : null;
     },

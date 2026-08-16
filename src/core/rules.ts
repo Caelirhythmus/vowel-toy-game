@@ -17,9 +17,13 @@ export function envMatches(rule: Rule, word: Word, pos: 0 | 1): boolean {
     case 'long':
       return word.v[pos].long;
     case 'stressed-next-a':
-      return stressed && other.s === 'a' && !other.diph;
+      // a-mutation 是“向后同化”（regressive）：重读的 u 在前音节，
+      // 触发元音 a 在【后一】音节。pos=1 时“另一音节”是前一音节，
+      // 那是“前接 a”，不是 a-mutation，必须排除。
+      return pos === 0 && stressed && other.s === 'a' && !other.diph;
     case 'before-i':
-      return other.s === 'i' && !other.diph;
+      // i-umlaut 同理：目标元音在前音节、触发音 i 在【后一】音节
+      return pos === 0 && other.s === 'i' && !other.diph;
     default:
       return true;
   }
