@@ -74,6 +74,14 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!-- 玻璃拟态背景装饰层：fixed 彩色光斑，为 backdrop-filter 提供"可糊之物"（见 styles/main.css） -->
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+    <span class="blob blob-4"></span>
+  </div>
+
   <div class="container">
     <header>
       <div class="header-row">

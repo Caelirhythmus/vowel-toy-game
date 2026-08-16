@@ -19,6 +19,99 @@
   src: url('/fonts/charis-sil-italic.woff2') format('woff2');
 }
 
+/* ============================================================
+ * 玻璃拟态（Glassmorphism）设计令牌
+ * 主题：浅色半透明玻璃 + 固定彩色光斑背景（纯 CSS，零新依赖）
+ * - 光斑：径向渐变内建柔边，动画只动 transform（合成器友好）
+ * - 兼容降级（@supports / prefers-reduced-transparency /
+ *   移动端 GPU 预算）见文末
+ * ============================================================ */
+:root {
+  /* 玻璃面板底色 */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-card: rgba(248, 249, 250, 0.74);
+  --glass-bg-tint: rgba(240, 244, 255, 0.74);
+  --glass-bg-tint-b: rgba(253, 242, 240, 0.78);
+  --glass-bg-ok: rgba(212, 237, 218, 0.8);
+  --glass-bg-bad: rgba(248, 215, 218, 0.8);
+  --glass-dark: rgba(24, 40, 72, 0.88);
+  --glass-header: linear-gradient(to right, rgba(75, 108, 183, 0.85), rgba(24, 40, 72, 0.9));
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-border-soft: rgba(214, 224, 238, 0.65);
+  --glass-blur: 18px;
+  --glass-blur-sm: 8px;
+  --glass-blur-xs: 5px;
+  --glass-shadow: 0 15px 35px rgba(31, 46, 82, 0.16);
+  --overlay: rgba(15, 23, 42, 0.45);
+}
+
+/* ---------- 背景装饰层：固定彩色光斑 ---------- */
+.bg-decor {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-decor .blob {
+  position: absolute;
+  border-radius: 50%;
+  /* 柔边内建于渐变，避免 filter: blur 参与逐帧重栅格化 */
+  background: radial-gradient(circle at 30% 30%, var(--blob-color) 0%, transparent 68%);
+  will-change: transform;
+  animation: blob-drift 36s ease-in-out infinite alternate;
+}
+
+.blob-1 {
+  --blob-color: rgba(75, 108, 183, 0.5);
+  width: 72vmax;
+  height: 72vmax;
+  left: -22vmax;
+  top: -18vmax;
+  animation-duration: 36s;
+  animation-delay: -2s;
+}
+
+.blob-2 {
+  --blob-color: rgba(168, 85, 247, 0.42);
+  width: 60vmax;
+  height: 60vmax;
+  right: -20vmax;
+  top: 4vmax;
+  animation-duration: 42s;
+  animation-delay: -13s;
+}
+
+.blob-3 {
+  --blob-color: rgba(244, 114, 182, 0.38);
+  width: 64vmax;
+  height: 64vmax;
+  left: -16vmax;
+  bottom: -22vmax;
+  animation-duration: 39s;
+  animation-delay: -21s;
+}
+
+.blob-4 {
+  --blob-color: rgba(45, 212, 191, 0.38);
+  width: 54vmax;
+  height: 54vmax;
+  right: -14vmax;
+  bottom: -12vmax;
+  animation-duration: 33s;
+  animation-delay: -27s;
+}
+
+@keyframes blob-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5vmax, -4vmax, 0) scale(1.1);
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -42,17 +135,31 @@ body {
 .container {
   max-width: 920px;
   width: 100%;
-  background-color: #fff;
+  /* relative + z-index：与 z-index:-1 的装饰层构成明确层级，
+     同时自身 backdrop-filter 已创建 stacking context（双重保险） */
+  position: relative;
+  z-index: 1;
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    /* 玻璃上缘高光 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 15px 30px rgba(0, 0, 0, 0.1),
+    var(--glass-shadow);
   /* 注意：不能用 overflow:hidden——它会把子孙 position:sticky 的
      滚动容器锚定在自身，导致计时条/下一题坞/侧栏全部失去吸顶效果 */
 }
 
 /* ---------- 头部 ---------- */
 header {
-  background: linear-gradient(to right, #4b6cb7, #182848);
+  background: var(--glass-header);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
   color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   padding: 24px 30px;
   border-radius: 20px 20px 0 0;
 }
@@ -77,8 +184,10 @@ header .subtitle {
 
 .lang-btn {
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.4);
   color: #fff;
   font-weight: 700;
   padding: 8px 16px;
@@ -88,7 +197,7 @@ header .subtitle {
 }
 
 .lang-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.32);
 }
 
 /* ---------- 主体：双栏布局（答题闭环 + 粘性参考列） ---------- */
@@ -280,7 +389,7 @@ select:disabled {
 }
 
 /* ---------- 计时器 ---------- */
-/* sticky top：滚动阅读反馈时仍能看到剩余时间（含常驻透明边框，
+/* sticky top：滚动阅读反馈时仍能看到剩余时间（含常驻浅色边框，
    避免进入 urgent 态时边框出现导致布局跳动） */
 .timer {
   position: sticky;
@@ -292,11 +401,13 @@ select:disabled {
   font-weight: 700;
   color: #182848;
   margin-bottom: 10px;
-  background: #f0f4ff;
-  border: 2px solid transparent;
+  background: var(--glass-bg-tint);
+  backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.3);
+  border: 2px solid rgba(255, 255, 255, 0.55);
   border-radius: 12px;
   padding: 6px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), var(--glass-shadow);
 }
 
 /* 剩余时间进度条（随 tick 平滑收窄） */
@@ -318,7 +429,7 @@ select:disabled {
 
 /* 最后 10 秒：警示底色 + 红色脉冲光环 */
 .timer.urgent {
-  background: #fdecea;
+  background: var(--glass-bg-bad);
   border: 2px solid #e74c3c;
   animation: urgent-pulse 1s ease-in-out infinite;
 }
@@ -363,7 +474,9 @@ select:disabled {
 /* ---------- 开局引导（idle 占位） ---------- */
 .idle-hint {
   text-align: center;
-  background: #f0f4ff;
+  background: var(--glass-bg-tint);
+  backdrop-filter: blur(var(--glass-blur-xs));
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs));
   border: 2px dashed #9db3d3;
   border-radius: 14px;
   padding: 20px 18px;
@@ -397,9 +510,10 @@ select:disabled {
   justify-content: center;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(4px);
-  border: 1px solid #d6e0ee;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  border: 1px solid var(--glass-border);
   border-radius: 999px;
   padding: 9px 16px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
@@ -421,22 +535,24 @@ select:disabled {
 }
 
 .word-box {
-  background-color: #f8f9fa;
+  background-color: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
   border-radius: 15px;
   padding: 12px 18px;
   min-width: 170px;
   text-align: center;
-  border: 2px solid #dfe6e9;
+  border: 2px solid rgba(223, 230, 233, 0.8);
 }
 
 .word-box.a {
   border-color: #4b6cb7;
-  background: #f0f4ff;
+  background: var(--glass-bg-tint);
 }
 
 .word-box.b {
   border-color: #c0392b;
-  background: #fdf2f0;
+  background: var(--glass-bg-tint-b);
 }
 
 .word-box h3 {
@@ -491,8 +607,10 @@ select:disabled {
   max-width: 480px;
   margin: 0 auto 18px;
   text-align: center;
-  background: #fbfcfe;
-  border: 1px solid #e3e9f2;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.2);
+  border: 1px solid var(--glass-border-soft);
   border-radius: 14px;
   padding: 12px 12px 8px;
 }
@@ -714,7 +832,7 @@ select:disabled {
   width: 36px;
   height: 36px;
   border: 1px solid #4b6cb7;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.8);
   color: #4b6cb7;
   border-radius: 999px;
   font-size: 1rem;
@@ -745,19 +863,21 @@ select:disabled {
   margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #e3e9f2;
+  background-color: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-xs));
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs));
+  border: 1px solid rgba(227, 233, 242, 0.8);
   line-height: 1.6;
 }
 
 .feedback.ok {
-  background-color: #d4edda;
+  background-color: var(--glass-bg-ok);
   border-color: #a9d8b4;
   color: #155724;
 }
 
 .feedback.bad {
-  background-color: #f8d7da;
+  background-color: var(--glass-bg-bad);
   border-color: #f1b0b7;
   color: #721c24;
 }
@@ -799,8 +919,8 @@ select:disabled {
 }
 
 .example-card {
-  background: #fff;
-  border: 1px solid #d6e0ee;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-soft);
   border-left: 4px solid #4b6cb7;
   border-radius: 8px;
   padding: 8px 12px;
@@ -828,7 +948,9 @@ select:disabled {
 }
 
 .stat {
-  background-color: #182848;
+  background-color: var(--glass-dark);
+  backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs)) saturate(1.2);
   color: #fff;
   padding: 8px 16px;
   border-radius: 10px;
@@ -850,9 +972,11 @@ select:disabled {
 
 /* ---------- 说明区 ---------- */
 .info {
-  background-color: #f8f9fa;
+  background-color: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.15);
   padding: 16px 24px 20px;
-  border-top: 2px solid #dfe6e9;
+  border-top: 2px solid rgba(223, 230, 233, 0.8);
   border-radius: 0 0 20px 20px;
 }
 
@@ -876,8 +1000,8 @@ select:disabled {
 
 /* 手机端元音图折叠条：卡片式 */
 .game-side .chart-toggle {
-  background: #fbfcfe;
-  border: 1px solid #e3e9f2;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-soft);
   border-radius: 12px;
   padding: 10px 14px;
   font-size: 0.95rem;
@@ -946,7 +1070,7 @@ select:disabled {
 .cheatsheet-context {
   font-size: 0.88rem;
   color: #555;
-  background: #f0f4ff;
+  background: var(--glass-bg-tint);
   border: 1px dashed #9db3d3;
   border-radius: 8px;
   padding: 6px 10px;
@@ -958,7 +1082,9 @@ select:disabled {
 .modal {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: var(--overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -967,7 +1093,10 @@ select:disabled {
 }
 
 .modal-content {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.65);
   padding: 30px 34px;
   border-radius: 20px;
   max-width: 560px;
@@ -1001,7 +1130,7 @@ select:disabled {
 }
 
 .mistake-item {
-  background: #fdf2f0;
+  background: var(--glass-bg-tint-b);
   border: 1px solid #f1b0b7;
   border-radius: 10px;
   padding: 8px 12px;
@@ -1156,5 +1285,63 @@ select:disabled {
 
   .btn-row {
     justify-content: center;
+  }
+}
+
+/* ============================================================
+ * 玻璃拟态：兼容性与性能降级
+ * ============================================================ */
+
+/* 不支持 backdrop-filter 的浏览器（Firefox < 103、部分企业浏览器）
+   → 全部面板回退为近实色；装饰层无模糊能力时干脆隐藏，
+   避免"背景花了但没有玻璃"的廉价观感 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.97);
+    --glass-bg-card: rgba(248, 249, 250, 0.97);
+    --glass-bg-tint: rgba(240, 244, 255, 0.97);
+    --glass-bg-tint-b: rgba(253, 242, 240, 0.97);
+    --glass-bg-ok: rgba(212, 237, 218, 0.97);
+    --glass-bg-bad: rgba(248, 215, 218, 0.97);
+    --glass-dark: rgba(24, 40, 72, 0.98);
+    --glass-header: linear-gradient(to right, #4b6cb7, #182848);
+    --glass-border: rgba(255, 255, 255, 0.85);
+    --glass-border-soft: #d6e0ee;
+    --overlay: rgba(0, 0, 0, 0.7);
+  }
+
+  .bg-decor {
+    display: none;
+  }
+}
+
+/* 用户偏好减少透明度（Chrome 118+）→ 提高不透明度、减弱模糊 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.93);
+    --glass-bg-card: rgba(248, 249, 250, 0.94);
+    --glass-bg-tint: rgba(240, 244, 255, 0.94);
+    --glass-bg-tint-b: rgba(253, 242, 240, 0.95);
+    --glass-bg-ok: rgba(212, 237, 218, 0.94);
+    --glass-bg-bad: rgba(248, 215, 218, 0.94);
+    --glass-dark: rgba(24, 40, 72, 0.96);
+    --glass-blur: 3px;
+    --glass-blur-sm: 2px;
+    --glass-blur-xs: 1px;
+    --overlay: rgba(0, 0, 0, 0.62);
+  }
+}
+
+/* 移动端：模糊半径收紧 + 光斑静止（本机 TTS WASM 已占主线程，
+   减少持续 GPU 合成压力；reduced-motion 全局块也会一并停掉漂移动画） */
+@media (max-width: 959px) {
+  :root {
+    --glass-blur: 12px;
+    --glass-blur-sm: 6px;
+    --glass-blur-xs: 4px;
+  }
+
+  .bg-decor .blob {
+    animation: none;
   }
 }
