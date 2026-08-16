@@ -281,8 +281,9 @@ function resolveCandidateUrl(u: string): string {
  * pconline/ipip 国内视角兜底（注意 IPv6 直连会绕过代理）。
  */
 
-/** 会话创建超时：wasm 初始化大模型在弱网/弱设备上可能极慢或挂起，超时降级下一候选 */
-const CREATE_TIMEOUT_MS = 30_000;
+/** 会话创建超时：手机上首次初始化含 ort wasm（~10MB）下载/编译 + 模型解析，
+ *  放宽到 90s；worker 模式不阻塞主线程，超时后明确降级（不会卡死） */
+const CREATE_TIMEOUT_MS = 90_000;
 
 /** 简易 tar（UStar）解析：fflate 无 tar 支持，tar 格式简单（512B 头 + 对齐数据） */
 function untar(tar: Uint8Array): { name: string; data: Uint8Array }[] {
@@ -399,26 +400,29 @@ async function createSession(): Promise<LoadedSession> {
   if (mobile) {
     console.info('[piper] 移动端设备：使用 int8 小模型候选（float 60MB 在手机端下载慢、会话创建易超时）');
   }
-  let lastErr: unknown = null;
-  for (const [i, cand] of candidates.entries()) {
+
+  /* 阶段 1：多渠道下载模型字节（候选均为同一模型的不同下载通道；
+   * 任一成功即可，失败试下一通道——与“会话创建”完全解耦） */
+  let modelBytes: Uint8Array | null = null;
+  let usedLabel = '';
+  let downloadErr: unknown = null;
+  for (const cand of candidates) {
     try {
       const cacheKey = candidateCacheKey(cand);
-      // 1) 本地缓存命中：零网络请求，直接进入会话初始化
-      //    ——长度校验：与 knownBytes 不符视为坏缓存（防 create 反复失败）
+      // 本地缓存命中（长度校验：与 knownBytes 不符视为坏缓存，丢弃重下）
       let fromCache = await cachedBytes(cacheKey);
       if (fromCache && fromCache.length !== cand.knownBytes) {
         console.warn(`[piper] 本地缓存字节数不符（${fromCache.length} != ${cand.knownBytes}），丢弃重下（${cand.label}）`);
         fromCache = null;
         void (await openModelCache())?.delete(cacheRequest(cacheKey));
       }
-      let modelBytes: Uint8Array;
       if (fromCache) {
         modelBytes = fromCache;
+        usedLabel = cand.label;
         console.info(`[piper] 语音模型命中本地缓存（${cand.label}），跳过下载`);
         // 100% = “已下载，正在初始化”，与“下载中”区分开（手机端可感知）
         setStatus('loading', 100);
       } else {
-        // 2) 未命中：走网络候选链下载，成功后写入本地缓存（下次免下载）
         modelBytes = cand.tgz
           ? await fetchTgzFile(
               resolveCandidateUrl(cand.tgz),
@@ -437,44 +441,45 @@ async function createSession(): Promise<LoadedSession> {
             : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
                 setStatus('loading', pct)
               );
+        usedLabel = cand.label;
         void storeBytes(cacheKey, modelBytes);
       }
-      // 3) 会话创建：优先 Web Worker（create 不阻塞主线程，超时可生效；
-      //    手机上主线程 create 曾阻塞数十秒导致 UI 卡死 100%）
-      if (!workerFailed && typeof Worker !== 'undefined') {
-        try {
-          const wh = await createWorkerSession(modelBytes, config);
-          console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz，worker 线程）`);
-          return { mode: 'worker', worker: wh, config };
-        } catch (e) {
-          workerFailed = true;
-          console.warn(`[piper] worker 模式失败（${(e as Error).message}），本会话降级主线程…`);
-        }
-      }
-      // 主线程降级路径（worker 不可用/失败时）
-      const ort = await loadOrt();
-      const session = await Promise.race([
-        ort.InferenceSession.create(modelBytes, {
-          executionProviders: ['wasm'],
-          graphOptimizationLevel: 'disabled'
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`会话创建超时（${cand.label}，${CREATE_TIMEOUT_MS / 1000}s）`)),
-            CREATE_TIMEOUT_MS
-          )
-        )
-      ]);
-      console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${cand.label}，${config.audio.sample_rate}Hz，主线程）`);
-      return { mode: 'main', ort, session, config };
+      break;
     } catch (e) {
-      lastErr = e;
-      if (i < candidates.length - 1) {
-        console.warn(`[piper] ${cand.label} 不可用（${(e as Error).message}），尝试下一个…`);
-      }
+      downloadErr = e;
+      console.warn(`[piper] 下载通道 ${cand.label} 不可用（${(e as Error).message}），尝试下一通道…`);
     }
   }
-  throw new Error(`语音模型全部加载失败：${(lastErr as Error)?.message ?? lastErr}`);
+  if (!modelBytes) {
+    throw new Error(`模型下载全部失败：${(downloadErr as Error)?.message ?? downloadErr}`);
+  }
+
+  /* 阶段 2：会话创建——只尝试一次（worker → 主线程），失败即整体降级，
+   * 绝不再回到渠道循环（曾因此造成“下载 100% → create 失败 → 重新 0%”无尽循环） */
+  const createTimeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`会话创建超时（${CREATE_TIMEOUT_MS / 1000}s）`)), CREATE_TIMEOUT_MS)
+  );
+  if (!workerFailed && typeof Worker !== 'undefined') {
+    try {
+      const wh = await Promise.race([createWorkerSession(modelBytes, config), createTimeout]);
+      console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${usedLabel}，${config.audio.sample_rate}Hz，worker 线程）`);
+      return { mode: 'worker', worker: wh, config };
+    } catch (e) {
+      workerFailed = true;
+      console.warn(`[piper] worker 模式失败（${(e as Error).message}），本会话降级主线程…`);
+    }
+  }
+  // 主线程降级路径（worker 不可用/失败时）
+  const ort = await loadOrt();
+  const session = await Promise.race([
+    ort.InferenceSession.create(modelBytes, {
+      executionProviders: ['wasm'],
+      graphOptimizationLevel: 'disabled'
+    }),
+    createTimeout
+  ]);
+  console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${usedLabel}，${config.audio.sample_rate}Hz，主线程）`);
+  return { mode: 'main', ort, session, config };
 }
 
 function loadSession(): Promise<LoadedSession | null> {
