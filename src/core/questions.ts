@@ -1,9 +1,9 @@
 /* ============================================================
  * core：题型生成器（类型 / 频率 / 系统预测 / 混合）
  * ============================================================ */
-import type { Difficulty, PairQuestion, Question, Rule, SystemQuestion, Word } from './types';
+import type { Difficulty, PairQuestion, Question, Rule, SystemQuestion, Tier, Word } from './types';
 import { RULES } from '@/config/rules';
-import { FREQ_WEIGHTS, MIXED_WEIGHTS, SYSTEM_WEIGHTS } from '@/config/game';
+import { MIXED_WEIGHTS, SYSTEM_WEIGHTS } from '@/config/game';
 import { randomWord, makeWordForRule, wordText } from './words';
 import { applicablePositions, applyRule } from './rules';
 
@@ -45,11 +45,23 @@ export function genTypeQuestion(difficulty: Difficulty): PairQuestion | null {
   return { kind: 'type', rule, wordA: p.wordA, wordB: p.wordB, pos: p.pos, answer: rule.type };
 }
 
+/**
+ * 频率题：分层抽样——先均匀抽档位，再从该档规则池抽规则。
+ * 关键：不能直接按规则权重抽（easy 池全为 typical 时答案恒为“典型”，
+ * 玩家无脑点选即可全对；hard 池 6:2:1 也严重偏斜）。
+ * 分层后答案分布完全均衡：easy 两档（典型/偶见）、hard 三档，
+ * 玩家必须真正区分档位（如“条件低化=典型 vs 无条件低化=罕见”）。
+ */
 export function genFreqQuestion(difficulty: Difficulty): PairQuestion | null {
-  const rule = pickRule(difficulty, FREQ_WEIGHTS);
+  const tiers: Tier[] =
+    difficulty === 'easy' ? ['typical', 'occasional'] : ['typical', 'occasional', 'rare'];
+  const tier = pick(tiers);
+  const pool = RULES.filter((r) => r.tier === tier);
+  if (!pool.length) return null;
+  const rule = pick(pool);
   const p = genPair(rule);
   if (!p) return null;
-  return { kind: 'freq', rule, wordA: p.wordA, wordB: p.wordB, pos: p.pos, answer: rule.tier };
+  return { kind: 'freq', rule, wordA: p.wordA, wordB: p.wordB, pos: p.pos, answer: rule.tier, tiers };
 }
 
 export function genSystemQuestion(difficulty: Difficulty): SystemQuestion | null {

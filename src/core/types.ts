@@ -106,6 +106,8 @@ export interface PairQuestion {
   pos: 0 | 1;
   /** 正确答案：type → ChangeType id；freq → Tier id */
   answer: string;
+  /** 频率题候选档位（按钮按此渲染）：easy 两档 / hard 三档，保证答案分布不偏斜 */
+  tiers?: Tier[];
   /** 系统题生成兜底退化为词对题时置 true */
   fallback?: boolean;
 }

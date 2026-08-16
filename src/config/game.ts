@@ -61,13 +61,6 @@ export const MIXED_WEIGHTS: Record<'type' | 'freq' | 'system', number> = {
   system: 0.3
 };
 
-/** 频率题：稀有规则提权，保证三档分布均衡 */
-export const FREQ_WEIGHTS: Record<string, number> = {
-  'lower-free': 2.5,
-  'back-a': 1.6,
-  'diph-short': 1.6
-};
-
 /** 系统预测题：环境型规则权重更高 */
 export const SYSTEM_WEIGHTS: Record<string, number> = {
   reduce: 3,

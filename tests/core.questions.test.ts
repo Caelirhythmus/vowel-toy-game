@@ -23,6 +23,34 @@ describe('词对题生成不变量', () => {
   }
 });
 
+describe('频率题档位分布（分层抽样，回归：easy 答案曾恒为“典型”）', () => {
+  it('easy：答案仅典型/偶见两档，且两档都大量出现', () => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 400; i++) {
+      const q = genFreqQuestion('easy');
+      if (!q) continue;
+      expect(['typical', 'occasional']).toContain(q.answer);
+      expect(q.tiers).toEqual(['typical', 'occasional']);
+      counts[q.answer] = (counts[q.answer] ?? 0) + 1;
+    }
+    expect(counts['typical']).toBeGreaterThan(50);
+    expect(counts['occasional']).toBeGreaterThan(50);
+  });
+
+  it('hard：三档均衡出现，罕见档不再是边角料', () => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 600; i++) {
+      const q = genFreqQuestion('hard');
+      if (!q) continue;
+      expect(q.tiers).toEqual(['typical', 'occasional', 'rare']);
+      counts[q.answer] = (counts[q.answer] ?? 0) + 1;
+    }
+    for (const tier of ['typical', 'occasional', 'rare']) {
+      expect(counts[tier]).toBeGreaterThan(50);
+    }
+  });
+});
+
 describe('系统预测题不变量', () => {
   it('词表 5 词、至少 1 变化 1 未变化、答案与计算一致（300 题）', () => {
     for (let i = 0; i < 300; i++) {

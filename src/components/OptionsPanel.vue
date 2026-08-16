@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { GamePhase, Question, Word } from '@/core';
 import { wordText } from '@/core';
-import { TIER_OPTIONS, TYPE_OPTIONS } from '@/config/game';
+import { TIER_OPTIONS, TIER_IDS, TYPE_OPTIONS } from '@/config/game';
 import { useI18n } from '@/composables/useI18n';
 import { speechService } from '@/services/audio';
 
@@ -27,6 +27,14 @@ const systemWords = computed(() =>
   props.question.kind === 'system' ? props.question.words : []
 );
 
+/** 频率题按钮按题目的候选档位渲染（easy 两档 / hard 三档），
+ * 与 genFreqQuestion 的分层抽样保持一致 */
+const freqTiers = computed(() => {
+  if (props.question.kind !== 'freq') return TIER_OPTIONS;
+  const tiers = props.question.tiers ?? TIER_IDS;
+  return TIER_OPTIONS.filter((o) => tiers.includes(o.id));
+});
+
 /** 系统题每个词都可点读（与词对题的发音按钮同一链路） */
 const speakSupported = speechService.supported();
 function speakWord(word: Word) {
@@ -42,7 +50,7 @@ function speakWord(word: Word) {
       </button>
     </template>
     <template v-else-if="question.kind === 'freq'">
-      <button v-for="o in TIER_OPTIONS" :key="o.id" class="opt-btn" :disabled="disabled(phase)" @click="emit('answer', o.id)">
+      <button v-for="o in freqTiers" :key="o.id" class="opt-btn" :disabled="disabled(phase)" @click="emit('answer', o.id)">
         {{ o[lang] }}
       </button>
     </template>
