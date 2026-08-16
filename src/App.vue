@@ -6,6 +6,7 @@ import { useCompactLayout } from '@/composables/useViewport';
 import { speechService } from '@/services/audio';
 import { applicablePositions, applyRule, wordText } from '@/core';
 import LangToggle from '@/components/LangToggle.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 import SettingsPanel from '@/components/SettingsPanel.vue';
 import TimerBar from '@/components/TimerBar.vue';
 import QuestionArea from '@/components/QuestionArea.vue';
@@ -89,7 +90,10 @@ onUnmounted(() => {
           <h1>{{ t('app.title') }}</h1>
           <p class="subtitle">{{ t('app.subtitle') }}</p>
         </div>
-        <LangToggle />
+        <div class="header-actions">
+          <ThemeToggle />
+          <LangToggle />
+        </div>
       </div>
     </header>
 

@@ -193,17 +193,17 @@ const colLabels = [
       <svg :viewBox="`0 0 ${W} ${H}`" role="img" :aria-label="t('chart.title')">
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#c0392b" />
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--danger-strong)" />
           </marker>
         </defs>
 
         <!-- 发音部位图底图 -->
         <template v-if="view === 'articulatory'">
-          <polygon :points="trapezoid" fill="#f4f7fb" stroke="#9db3d3" stroke-width="1.5" />
-          <line v-for="h in rowHeights" :key="'r' + h" :x1="px(xF(0, h))" :y1="py(yF(h))" :x2="px(xF(2, h))" :y2="py(yF(h))" stroke="#c9d6ea" stroke-width="1" />
-          <line :x1="px(xF(1, 4))" :y1="py(yF(4))" :x2="px(xF(1, 0))" :y2="py(yF(0))" stroke="#c9d6ea" stroke-width="1" stroke-dasharray="3 3" />
-          <text v-for="r in rowLabels" :key="r.key" :x="px(0.145)" :y="py(yF(r.h))" text-anchor="end" font-size="10.5" fill="#8a94a6">{{ t(r.key) }}</text>
-          <text v-for="c in colLabels" :key="c.key" :x="px(xF(c.back, 0))" :y="py(0.965)" text-anchor="middle" font-size="10.5" fill="#8a94a6">{{ t(c.key) }}</text>
+          <polygon :points="trapezoid" fill="var(--chart-bg)" stroke="var(--chart-line-strong)" stroke-width="1.5" />
+          <line v-for="h in rowHeights" :key="'r' + h" :x1="px(xF(0, h))" :y1="py(yF(h))" :x2="px(xF(2, h))" :y2="py(yF(h))" stroke="var(--chart-line)" stroke-width="1" />
+          <line :x1="px(xF(1, 4))" :y1="py(yF(4))" :x2="px(xF(1, 0))" :y2="py(yF(0))" stroke="var(--chart-line)" stroke-width="1" stroke-dasharray="3 3" />
+          <text v-for="r in rowLabels" :key="r.key" :x="px(0.145)" :y="py(yF(r.h))" text-anchor="end" font-size="10.5" fill="var(--chart-label)">{{ t(r.key) }}</text>
+          <text v-for="c in colLabels" :key="c.key" :x="px(xF(c.back, 0))" :y="py(0.965)" text-anchor="middle" font-size="10.5" fill="var(--chart-label)">{{ t(c.key) }}</text>
         </template>
 
         <!-- 声学图底图（F1×F2） -->
@@ -213,14 +213,14 @@ const colLabels = [
             :y="py(ACOUSTIC_BOX.y0 - 0.015)"
             :width="px(ACOUSTIC_BOX.x1 - ACOUSTIC_BOX.x0 + 0.03)"
             :height="py(ACOUSTIC_BOX.y1 - ACOUSTIC_BOX.y0 + 0.03)"
-            fill="#f4f7fb" stroke="#9db3d3" stroke-width="1.5"
+            fill="var(--chart-bg)" stroke="var(--chart-line-strong)" stroke-width="1.5"
           />
-          <text :x="px(0.5)" :y="py(0.985)" text-anchor="middle" font-size="10.5" fill="#8a94a6">{{ t('chart.axis.f2') }}</text>
-          <text :x="px(0.045)" :y="py(0.5)" text-anchor="middle" font-size="10.5" fill="#8a94a6" :transform="`rotate(-90 ${px(0.045)} ${py(0.5)})`">{{ t('chart.axis.f1') }}</text>
-          <text :x="px(ACOUSTIC_BOX.x0)" :y="py(ACOUSTIC_BOX.y0 - 0.02)" text-anchor="middle" font-size="9" fill="#a0aaba">{{ '2300' }}</text>
-          <text :x="px(ACOUSTIC_BOX.x1)" :y="py(ACOUSTIC_BOX.y0 - 0.02)" text-anchor="middle" font-size="9" fill="#a0aaba">{{ '900' }}</text>
-          <text :x="px(ACOUSTIC_BOX.x0 - 0.018)" :y="py(ACOUSTIC_BOX.y0)" text-anchor="end" font-size="9" fill="#a0aaba">{{ '300' }}</text>
-          <text :x="px(ACOUSTIC_BOX.x0 - 0.018)" :y="py(ACOUSTIC_BOX.y1)" text-anchor="end" font-size="9" fill="#a0aaba">{{ '800' }}</text>
+          <text :x="px(0.5)" :y="py(0.985)" text-anchor="middle" font-size="10.5" fill="var(--chart-label)">{{ t('chart.axis.f2') }}</text>
+          <text :x="px(0.045)" :y="py(0.5)" text-anchor="middle" font-size="10.5" fill="var(--chart-label)" :transform="`rotate(-90 ${px(0.045)} ${py(0.5)})`">{{ t('chart.axis.f1') }}</text>
+          <text :x="px(ACOUSTIC_BOX.x0)" :y="py(ACOUSTIC_BOX.y0 - 0.02)" text-anchor="middle" font-size="9" fill="var(--chart-label-dim)">{{ '2300' }}</text>
+          <text :x="px(ACOUSTIC_BOX.x1)" :y="py(ACOUSTIC_BOX.y0 - 0.02)" text-anchor="middle" font-size="9" fill="var(--chart-label-dim)">{{ '900' }}</text>
+          <text :x="px(ACOUSTIC_BOX.x0 - 0.018)" :y="py(ACOUSTIC_BOX.y0)" text-anchor="end" font-size="9" fill="var(--chart-label-dim)">{{ '300' }}</text>
+          <text :x="px(ACOUSTIC_BOX.x0 - 0.018)" :y="py(ACOUSTIC_BOX.y1)" text-anchor="end" font-size="9" fill="var(--chart-label-dim)">{{ '800' }}</text>
         </template>
 
         <!-- 元音点（可聚焦/点击播放权威录音/悬停看特征卡） -->
@@ -240,15 +240,15 @@ const colLabels = [
         >
           <circle
             :cx="px(d.x)" :cy="py(d.y)" r="4"
-            :fill="dotState(d.s) === 'source' ? '#27ae60' : d.round ? '#8e44ad' : '#2d3436'"
-            :stroke="dotState(d.s) === 'target' ? '#2980b9' : 'none'"
+            :fill="dotState(d.s) === 'source' ? 'var(--success-strong)' : d.round ? 'var(--chart-round)' : 'var(--ink)'"
+            :stroke="dotState(d.s) === 'target' ? 'var(--chart-target)' : 'none'"
             :stroke-width="dotState(d.s) === 'target' ? 2 : 0"
             :stroke-dasharray="dotState(d.s) === 'target' ? '3 3' : undefined"
             :opacity="dotState(d.s) === 'idle' ? 0.3 : 1"
           />
           <text
             :x="px(d.x + 0.02)" :y="py(d.y + 0.015)" font-size="12.5"
-            :fill="dotState(d.s) === 'idle' ? '#aab2c0' : dotState(d.s) === 'source' ? '#1e7d3c' : '#333'"
+            :fill="dotState(d.s) === 'idle' ? 'var(--disabled-border)' : dotState(d.s) === 'source' ? 'var(--success-strong)' : '#333'"
             :opacity="dotState(d.s) === 'idle' ? 0.4 : 1"
           >{{ d.s }}</text>
           <!-- 悬停/聚焦时的可见喇叭标识 -->
@@ -264,7 +264,7 @@ const colLabels = [
           v-for="d in diphLabels"
           :key="d.s"
           :x="px(d.x)" :y="py(d.y)" font-size="11.5" font-style="italic"
-          :fill="diffSet && diffSet.sources.has(d.s) ? '#1e7d3c' : '#7f8c8d'"
+          :fill="diffSet && diffSet.sources.has(d.s) ? 'var(--success-strong)' : 'var(--chart-dim)'"
           :aria-label="describeDiphthong(d.s, d.s.slice(0, 1), lang)"
         >{{ d.s }}</text>
 
@@ -273,10 +273,10 @@ const colLabels = [
           <line
             :key="animKey || 'pair'"
             :x1="px(aPos.x)" :y1="py(aPos.y)" :x2="px(bPos.x)" :y2="py(bPos.y)"
-            stroke="#c0392b" stroke-width="2" marker-end="url(#arr)" pathLength="1" class="path-anim"
+            stroke="var(--danger-strong)" stroke-width="2" marker-end="url(#arr)" pathLength="1" class="path-anim"
           />
-          <circle :cx="px(aPos.x)" :cy="py(aPos.y)" r="8" fill="rgba(75,108,183,0.18)" stroke="#4b6cb7" stroke-width="2.5" />
-          <circle :cx="px(bPos.x)" :cy="py(bPos.y)" r="8" fill="rgba(231,76,60,0.18)" stroke="#e74c3c" stroke-width="2.5" class="b-pulse" />
+          <circle :cx="px(aPos.x)" :cy="py(aPos.y)" r="8" fill="var(--chart-ring-a)" stroke="var(--accent)" stroke-width="2.5" />
+          <circle :cx="px(bPos.x)" :cy="py(bPos.y)" r="8" fill="var(--chart-ring-b)" stroke="var(--danger)" stroke-width="2.5" class="b-pulse" />
         </template>
       </svg>
 

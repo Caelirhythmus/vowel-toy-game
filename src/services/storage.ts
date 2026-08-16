@@ -62,7 +62,8 @@ export function saveJSON(key: string, value: unknown): void {
 export const STORAGE_KEYS = {
   lang: 'vl.lang',
   settings: 'vl.settings',
-  history: 'vl.history'
+  history: 'vl.history',
+  theme: 'vl.theme'
 } as const;
 
 export interface HistoryEntry {

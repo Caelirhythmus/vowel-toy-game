@@ -9,15 +9,15 @@ describe('VowelChart', () => {
     const wrapper = mount(VowelChart, { props: { a: null, b: null } });
     expect(wrapper.find('svg').exists()).toBe(true);
     expect(wrapper.findAll('circle').length).toBeGreaterThanOrEqual(13); // 全部单元音
-    expect(wrapper.find('circle[stroke="#4b6cb7"]').exists()).toBe(false);
+    expect(wrapper.find('circle[stroke="var(--accent)"]').exists()).toBe(false);
   });
 
   it('有词对时渲染 A→B 高亮', () => {
     const wrapper = mount(VowelChart, {
       props: { a: V('a'), b: V('æ') }
     });
-    expect(wrapper.find('circle[stroke="#4b6cb7"]').exists()).toBe(true);
-    expect(wrapper.find('circle[stroke="#e74c3c"]').exists()).toBe(true);
+    expect(wrapper.find('circle[stroke="var(--accent)"]').exists()).toBe(true);
+    expect(wrapper.find('circle[stroke="var(--danger)"]').exists()).toBe(true);
     expect(wrapper.find('line[marker-end="url(#arr)"]').exists()).toBe(true);
   });
 
@@ -25,7 +25,7 @@ describe('VowelChart', () => {
     const wrapper = mount(VowelChart, {
       props: { a: V('i', true), b: V('aɪ', false, true) }
     });
-    expect(wrapper.find('circle[stroke="#e74c3c"]').exists()).toBe(true);
+    expect(wrapper.find('circle[stroke="var(--danger)"]').exists()).toBe(true);
   });
 
   it('复元音标签两两不重叠（aɪ/aʊ 同起点也要错开）', () => {
@@ -96,8 +96,8 @@ describe('VowelChart', () => {
     const wrapper = mount(VowelChart, {
       props: { a: null, b: null, diff: { sources: ['a'], targets: ['æ'] } }
     });
-    expect(wrapper.find('circle[fill="#27ae60"]').exists()).toBe(true); // 源
-    expect(wrapper.find('circle[stroke="#2980b9"]').exists()).toBe(true); // 目标
+    expect(wrapper.find('circle[fill="var(--success-strong)"]').exists()).toBe(true); // 源
+    expect(wrapper.find('circle[stroke="var(--chart-target)"]').exists()).toBe(true); // 目标
     expect(wrapper.findAll('circle[opacity="0.3"]').length).toBeGreaterThan(0); // 淡化
     const legend = wrapper.find('.chart-legend').text();
     expect(legend).toContain('变化源');
