@@ -12,6 +12,7 @@
 import { wordToPiperIds } from '@/core/piper';
 import type { Word } from '@/core';
 import { PIPER_VOICE } from '@/config/audio';
+import { gunzipSync } from 'fflate';
 import { encodeWav16 } from './wav';
 
 /* ---------- onnxruntime-web 最小类型面 ---------- */
@@ -240,6 +241,45 @@ async function isChinaIp(): Promise<boolean> {
 /** 会话创建超时：wasm 初始化大模型在弱网/弱设备上可能极慢或挂起，超时降级下一候选 */
 const CREATE_TIMEOUT_MS = 30_000;
 
+/** 简易 tar（UStar）解析：fflate 无 tar 支持，tar 格式简单（512B 头 + 对齐数据） */
+function untar(tar: Uint8Array): { name: string; data: Uint8Array }[] {
+  const files: { name: string; data: Uint8Array }[] = [];
+  const decoder = new TextDecoder();
+  let off = 0;
+  while (off + 512 <= tar.length) {
+    const header = tar.subarray(off, off + 512);
+    if (header.every((b) => b === 0)) break; // 结尾零块
+    const name = decoder.decode(header.subarray(0, 100)).replace(/\0.*$/, '');
+    const sizeStr = decoder.decode(header.subarray(124, 136)).replace(/[^0-7]/g, '');
+    const size = sizeStr ? parseInt(sizeStr, 8) : 0;
+    const type = String.fromCharCode(header[156] ?? 0);
+    off += 512;
+    if (type === '0' || type === '\0' || type === '') {
+      files.push({ name, data: tar.slice(off, off + size) });
+    }
+    off += Math.ceil(size / 512) * 512;
+  }
+  return files;
+}
+
+/** 下载 npm 包 tarball 并解压出指定文件（tgz = gzip(tar)，fflate gunzip + 手写 tar） */
+async function fetchTgzFile(
+  url: string,
+  knownBytes: number,
+  timeoutMs: number,
+  fileInPackage: string,
+  onProgress: ((pct: number | null) => void) | null
+): Promise<Uint8Array> {
+  const tgz = await fetchWithProgress(url, knownBytes, timeoutMs, onProgress);
+  const tar = gunzipSync(tgz);
+  const files = untar(tar);
+  const entry = files.find((f) => f.name === fileInPackage);
+  if (!entry) {
+    throw new Error(`npm 包内未找到 ${fileInPackage}`);
+  }
+  return entry.data;
+}
+
 /** 依次尝试模型源（候选来自 PIPER_VOICE，按桌面/移动 + 国内/国外过滤），任一成功即返回会话 */
 async function createSession(
   ort: OrtApi
@@ -257,16 +297,24 @@ async function createSession(
   let lastErr: unknown = null;
   for (const [i, cand] of candidates.entries()) {
     try {
-      const modelBytes = cand.parts
-        ? await fetchParts(
-            cand.parts.map((p) => resolveCandidateUrl(p)),
-            cand.totalBytes!,
+      const modelBytes = cand.tgz
+        ? await fetchTgzFile(
+            resolveCandidateUrl(cand.tgz),
+            cand.knownBytes!,
             cand.timeoutMs,
+            cand.tgzFile!,
             (pct) => setStatus('loading', pct)
           )
-        : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
-            setStatus('loading', pct)
-          );
+        : cand.parts
+          ? await fetchParts(
+              cand.parts.map((p) => resolveCandidateUrl(p)),
+              cand.totalBytes!,
+              cand.timeoutMs,
+              (pct) => setStatus('loading', pct)
+            )
+          : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
+              setStatus('loading', pct)
+            );
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
       // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
       // 传错会在 create 时直接抛 "unsupported graph optimization level"）

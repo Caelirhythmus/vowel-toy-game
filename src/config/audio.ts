@@ -70,8 +70,9 @@ export const ESPEAK_CONSONANTS: Record<string, string> = {
  *   新增国内加速渠道（npmmirror/OSS 等）时只需往候选列表加条目。
  * ============================================================ */
 
-/** 模型源候选：parts=分片列表 / url=单文件（绝对 URL 直接用，相对路径以站点根归一化）；
- *  chinaOnly=true 表示仅国内 IP 使用（如 Gitee 镜像，国外访问反而慢） */
+/** 模型源候选：parts=分片列表 / url=单文件 / tgz=需解压的 npm 包 tarball
+ *  （绝对 URL 直接用，相对路径以站点根归一化）；
+ *  chinaOnly=true 表示仅国内 IP 使用 */
 export interface ModelCandidate {
   label: string;
   timeoutMs: number;
@@ -79,6 +80,8 @@ export interface ModelCandidate {
   totalBytes?: number;
   url?: string;
   knownBytes?: number;
+  tgz?: string;
+  tgzFile?: string;
   chinaOnly?: boolean;
 }
 
@@ -110,9 +113,9 @@ function jsdelivrParts(host: string): string[] {
 export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
   /**
-   * 音质优先架构 + IP 自适应：
-   * - 国内 IP：jsDelivr（暂缺国内专用渠道，Gitee 已实测不可用）→ 本地
-   * - 国外 IP/代理：跳过 Gitee，jsDelivr → 本地
+   * 音质优先架构：
+   * - 桌面：float npm 包（npmjs tarball，直连实测 2.6MB/s，CORS ✓）
+   *   → jsDelivr 多节点 → 本地分片 → int8
    * - 移动：int8 小模型为主（float 60MB 在手机端下载慢、会话创建易超时）
    * - 全失败 → 降级 espeak/TTS
    */
@@ -120,9 +123,15 @@ export const PIPER_VOICE = {
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelBytesFloat: 63201294,
-  /** 桌面候选：jsDelivr cdn → gcore → 本地分片 → int8 本地
-   *  （Gitee 镜像因大文件登录限制 + 无 CORS 已移除；接入国内渠道时加回） */
+  /** 桌面候选：float npmjs → jsDelivr cdn → gcore → 本地分片 → int8 本地 */
   modelCandidatesDesktop: [
+    {
+      label: 'float npmjs',
+      timeoutMs: 120_000,
+      tgz: 'https://registry.npmjs.org/vowel-lab-voices-float/-/vowel-lab-voices-float-0.1.0.tgz',
+      tgzFile: 'package/float.onnx',
+      knownBytes: 63201294
+    },
     {
       label: 'float jsDelivr CDN',
       timeoutMs: 90_000,
@@ -143,8 +152,15 @@ export const PIPER_VOICE = {
     },
     { label: 'int8 本地', timeoutMs: 60_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
   ] as ModelCandidate[],
-  /** 移动候选：int8 jsDelivr → 本地（Gitee 已移除，原因同上） */
+  /** 移动候选：int8 npmjs → jsDelivr → 本地 */
   modelCandidatesMobile: [
+    {
+      label: 'int8 npmjs',
+      timeoutMs: 60_000,
+      tgz: 'https://registry.npmjs.org/vowel-lab-voices-int8/-/vowel-lab-voices-int8-0.1.0.tgz',
+      tgzFile: 'package/int8.onnx',
+      knownBytes: 16599901
+    },
     {
       label: 'int8 jsDelivr',
       timeoutMs: 60_000,
