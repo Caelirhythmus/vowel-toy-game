@@ -1,0 +1,18 @@
+# GitHub Pages 静态资源缓存策略（_headers 语法，构建时随 public/ 复制进 dist/）
+# - vendor/ 下均为不可变资源（模型分片/ort wasm/espeak wasm，文件名固定），
+#   一年 immutable 缓存：espeak wasm 18MB、ort wasm、piper 模型都不再重复下载
+# - audio/、fonts/ 同理为不可变资源
+# - /assets/* 为带内容 hash 的构建产物，可长期缓存
+# 注意：index.html 不在此列，保持默认（页面更新即时生效）
+
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/audio/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

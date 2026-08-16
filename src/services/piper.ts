@@ -11,7 +11,7 @@
  * ============================================================ */
 import { wordToPiperIds } from '@/core/piper';
 import type { Word } from '@/core';
-import { PIPER_VOICE } from '@/config/audio';
+import { PIPER_VOICE, type ModelCandidate } from '@/config/audio';
 import { gunzipSync } from 'fflate';
 import { encodeWav16 } from './wav';
 
@@ -245,6 +245,71 @@ async function fetchTgzFile(
 }
 
 /** 依次尝试模型源（候选来自 PIPER_VOICE，桌面/移动），任一成功即返回会话 */
+
+/* ============================================================
+ * 模型本地持久化（Cache Storage API）
+ * 目的：语音模型（float 60MB / int8 18MB）只下载一次，之后每次
+ * 打开页面直接读本地缓存初始化，不再重复下载（浏览器 HTTP 缓存
+ * 不可控：无痕模式、缓存被清理、缓存头缺失都会重新下载）。
+ * - 缓存粒度：每个候选的“最终模型字节”（tgz 场景缓存解压后的
+ *   模型；parts 场景缓存拼接后的完整模型）
+ * - config JSON 不缓存（音素表可能随版本变化，体积仅几 KB）
+ * - 缓存 key 带版本前缀：模型文件被替换（如重新量化 int8）时
+ *   bump 前缀即可让旧缓存全部失效
+ * - 隐私模式/不支持时 openModelCache 返回 null，自动走网络路径
+ * ============================================================ */
+const MODEL_CACHE_NAME = 'vowel-lab-models-v1';
+const MODEL_CACHE_KEY_PREFIX = 'v2:';
+
+/** Cache Storage 的 key 必须是合法 URL：用假 host + encodeURIComponent 保证唯一合法 */
+function cacheRequest(key: string): Request {
+  return new Request(`https://vowel-cache.local/${encodeURIComponent(MODEL_CACHE_KEY_PREFIX + key)}`);
+}
+
+async function openModelCache(): Promise<Cache | null> {
+  try {
+    if (typeof caches === 'undefined') return null;
+    return await caches.open(MODEL_CACHE_NAME);
+  } catch {
+    return null;
+  }
+}
+
+/** 读缓存：命中返回字节，未命中/不可用返回 null */
+async function cachedBytes(key: string): Promise<Uint8Array | null> {
+  const cache = await openModelCache();
+  if (!cache) return null;
+  try {
+    const hit = await cache.match(cacheRequest(key));
+    if (!hit) return null;
+    const buf = await hit.arrayBuffer();
+    return buf.byteLength > 0 ? new Uint8Array(buf) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 写缓存（尽力而为：配额不足/隐私模式失败静默，不影响主流程） */
+async function storeBytes(key: string, bytes: Uint8Array): Promise<void> {
+  const cache = await openModelCache();
+  if (!cache) return;
+  try {
+    await cache.put(
+      cacheRequest(key),
+      new Response(bytes.slice(), { headers: { 'Content-Type': 'application/octet-stream' } })
+    );
+  } catch {
+    /* 静默 */
+  }
+}
+
+/** 候选 → 缓存 key（tgz 缓存解压后的模型；parts 缓存拼接后的完整模型） */
+function candidateCacheKey(cand: ModelCandidate): string {
+  if (cand.tgz) return `${cand.tgz}#${cand.tgzFile}`;
+  if (cand.parts) return cand.parts.join('|');
+  return cand.url!;
+}
+
 async function createSession(
   ort: OrtApi
 ): Promise<{ session: OrtSession; config: PiperConfig }> {
@@ -258,24 +323,37 @@ async function createSession(
   let lastErr: unknown = null;
   for (const [i, cand] of candidates.entries()) {
     try {
-      const modelBytes = cand.tgz
-        ? await fetchTgzFile(
-            resolveCandidateUrl(cand.tgz),
-            cand.knownBytes!,
-            cand.timeoutMs,
-            cand.tgzFile!,
-            (pct) => setStatus('loading', pct)
-          )
-        : cand.parts
-          ? await fetchParts(
-              cand.parts.map((p) => resolveCandidateUrl(p)),
-              cand.totalBytes!,
+      const cacheKey = candidateCacheKey(cand);
+      // 1) 本地缓存命中：零网络请求，直接进入会话初始化
+      const fromCache = await cachedBytes(cacheKey);
+      let modelBytes: Uint8Array;
+      if (fromCache) {
+        modelBytes = fromCache;
+        console.info(`[piper] 语音模型命中本地缓存（${cand.label}），跳过下载`);
+        // 无百分比 = “初始化中”，UI 与“下载中”区分开
+        setStatus('loading', null);
+      } else {
+        // 2) 未命中：走网络候选链下载，成功后写入本地缓存（下次免下载）
+        modelBytes = cand.tgz
+          ? await fetchTgzFile(
+              resolveCandidateUrl(cand.tgz),
+              cand.knownBytes!,
               cand.timeoutMs,
+              cand.tgzFile!,
               (pct) => setStatus('loading', pct)
             )
-          : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
-              setStatus('loading', pct)
-            );
+          : cand.parts
+            ? await fetchParts(
+                cand.parts.map((p) => resolveCandidateUrl(p)),
+                cand.totalBytes!,
+                cand.timeoutMs,
+                (pct) => setStatus('loading', pct)
+              )
+            : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
+                setStatus('loading', pct)
+              );
+        void storeBytes(cacheKey, modelBytes);
+      }
       // WASM 单线程下默认图优化（'all'）可能耗时数十秒；关掉以尽快可用。
       // 注意：onnxruntime-web 1.18 的合法枚举是 'disabled'（不是 'disable'，
       // 传错会在 create 时直接抛 "unsupported graph optimization level"）
