@@ -21,27 +21,29 @@
 
 /* ============================================================
  * 玻璃拟态（Glassmorphism）设计令牌
- * 主题：浅色半透明玻璃 + 固定彩色光斑背景（纯 CSS，零新依赖）
+ * 主题：蓝灰同色系玻璃 + 固定彩色光斑背景（纯 CSS，零新依赖）
+ * 配色原则：主体玻璃色相向背景对齐（背景蓝灰 → 玻璃蓝灰白），
+ * 光斑同为冷色系低饱和——任何浏览器/系统设置下都天然和谐
  * - 光斑：径向渐变内建柔边，动画只动 transform（合成器友好）
  * - 兼容降级（@supports / prefers-reduced-transparency /
  *   移动端 GPU 预算）见文末
  * ============================================================ */
 :root {
-  /* 玻璃面板底色 */
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-bg-card: rgba(248, 249, 250, 0.74);
-  --glass-bg-tint: rgba(240, 244, 255, 0.74);
-  --glass-bg-tint-b: rgba(253, 242, 240, 0.78);
-  --glass-bg-ok: rgba(212, 237, 218, 0.8);
-  --glass-bg-bad: rgba(248, 215, 218, 0.8);
-  --glass-dark: rgba(24, 40, 72, 0.88);
-  --glass-header: linear-gradient(to right, rgba(75, 108, 183, 0.85), rgba(24, 40, 72, 0.9));
-  --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-border-soft: rgba(214, 224, 238, 0.65);
+  /* 玻璃面板底色（蓝灰白：与 body 渐变同色系） */
+  --glass-bg: rgba(236, 243, 252, 0.6);
+  --glass-bg-card: rgba(238, 244, 252, 0.72);
+  --glass-bg-tint: rgba(228, 236, 250, 0.72);
+  --glass-bg-tint-b: rgba(250, 240, 243, 0.78);
+  --glass-bg-ok: rgba(221, 240, 228, 0.78);
+  --glass-bg-bad: rgba(248, 226, 228, 0.78);
+  --glass-dark: rgba(30, 45, 78, 0.88);
+  --glass-header: linear-gradient(to right, rgba(88, 118, 185, 0.85), rgba(34, 52, 92, 0.9));
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-border-soft: rgba(203, 217, 236, 0.6);
   --glass-blur: 18px;
   --glass-blur-sm: 8px;
   --glass-blur-xs: 5px;
-  --glass-shadow: 0 15px 35px rgba(31, 46, 82, 0.16);
+  --glass-shadow: 0 15px 35px rgba(40, 58, 92, 0.16);
   --overlay: rgba(15, 23, 42, 0.45);
 }
 
@@ -64,7 +66,7 @@
 }
 
 .blob-1 {
-  --blob-color: rgba(75, 108, 183, 0.5);
+  --blob-color: rgba(84, 116, 190, 0.42);
   width: 72vmax;
   height: 72vmax;
   left: -22vmax;
@@ -74,7 +76,7 @@
 }
 
 .blob-2 {
-  --blob-color: rgba(168, 85, 247, 0.42);
+  --blob-color: rgba(140, 120, 210, 0.36);
   width: 60vmax;
   height: 60vmax;
   right: -20vmax;
@@ -84,7 +86,7 @@
 }
 
 .blob-3 {
-  --blob-color: rgba(244, 114, 182, 0.38);
+  --blob-color: rgba(96, 168, 190, 0.32);
   width: 64vmax;
   height: 64vmax;
   left: -16vmax;
@@ -94,7 +96,7 @@
 }
 
 .blob-4 {
-  --blob-color: rgba(45, 212, 191, 0.38);
+  --blob-color: rgba(110, 150, 210, 0.34);
   width: 54vmax;
   height: 54vmax;
   right: -14vmax;
@@ -123,7 +125,7 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, #eef2f9 0%, #d3ddec 100%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -542,7 +544,7 @@ select:disabled {
   padding: 12px 18px;
   min-width: 170px;
   text-align: center;
-  border: 2px solid rgba(223, 230, 233, 0.8);
+  border: 2px solid rgba(203, 217, 236, 0.7);
 }
 
 .word-box.a {
@@ -866,7 +868,7 @@ select:disabled {
   background-color: var(--glass-bg-card);
   backdrop-filter: blur(var(--glass-blur-xs));
   -webkit-backdrop-filter: blur(var(--glass-blur-xs));
-  border: 1px solid rgba(227, 233, 242, 0.8);
+  border: 1px solid rgba(203, 217, 236, 0.7);
   line-height: 1.6;
 }
 
@@ -976,7 +978,7 @@ select:disabled {
   backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.15);
   -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(1.15);
   padding: 16px 24px 20px;
-  border-top: 2px solid rgba(223, 230, 233, 0.8);
+  border-top: 2px solid rgba(203, 217, 236, 0.7);
   border-radius: 0 0 20px 20px;
 }
 
@@ -1290,45 +1292,45 @@ select:disabled {
 
 /* ============================================================
  * 玻璃拟态：兼容性与性能降级
+ * 原则：降级只减弱"模糊"，不消灭"通透"——主体保持与背景
+ * 同色系的半透明（蓝灰调），即使无 backdrop-filter 或系统
+ * 关闭透明效果，面板与背景依然自然融合
  * ============================================================ */
 
 /* 不支持 backdrop-filter 的浏览器（Firefox < 103、部分企业浏览器）
-   → 全部面板回退为近实色；装饰层无模糊能力时干脆隐藏，
-   避免"背景花了但没有玻璃"的廉价观感 */
+   → 面板提高到近实不透明（同色系），光斑保留（它们是背景的一部分） */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
-    --glass-bg: rgba(255, 255, 255, 0.97);
-    --glass-bg-card: rgba(248, 249, 250, 0.97);
-    --glass-bg-tint: rgba(240, 244, 255, 0.97);
-    --glass-bg-tint-b: rgba(253, 242, 240, 0.97);
-    --glass-bg-ok: rgba(212, 237, 218, 0.97);
-    --glass-bg-bad: rgba(248, 215, 218, 0.97);
-    --glass-dark: rgba(24, 40, 72, 0.98);
-    --glass-header: linear-gradient(to right, #4b6cb7, #182848);
-    --glass-border: rgba(255, 255, 255, 0.85);
-    --glass-border-soft: #d6e0ee;
+    --glass-bg: rgba(236, 243, 252, 0.94);
+    --glass-bg-card: rgba(238, 244, 252, 0.95);
+    --glass-bg-tint: rgba(228, 236, 250, 0.95);
+    --glass-bg-tint-b: rgba(250, 240, 243, 0.95);
+    --glass-bg-ok: rgba(221, 240, 228, 0.95);
+    --glass-bg-bad: rgba(248, 226, 228, 0.95);
+    --glass-dark: rgba(30, 45, 78, 0.97);
+    --glass-header: linear-gradient(to right, #586eb9, #22345c);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-border-soft: #cbd9ec;
     --overlay: rgba(0, 0, 0, 0.7);
-  }
-
-  .bg-decor {
-    display: none;
   }
 }
 
-/* 用户偏好减少透明度（Chrome 118+）→ 提高不透明度、减弱模糊 */
+/* 用户/系统偏好减少透明度（Windows "透明效果"关闭时 Edge/Chrome
+   会匹配此查询）→ 温和降级：不透明度提高但保留玻璃质感，
+   模糊只减到 6px 而非归零 */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-bg: rgba(255, 255, 255, 0.93);
-    --glass-bg-card: rgba(248, 249, 250, 0.94);
-    --glass-bg-tint: rgba(240, 244, 255, 0.94);
-    --glass-bg-tint-b: rgba(253, 242, 240, 0.95);
-    --glass-bg-ok: rgba(212, 237, 218, 0.94);
-    --glass-bg-bad: rgba(248, 215, 218, 0.94);
-    --glass-dark: rgba(24, 40, 72, 0.96);
-    --glass-blur: 3px;
-    --glass-blur-sm: 2px;
-    --glass-blur-xs: 1px;
-    --overlay: rgba(0, 0, 0, 0.62);
+    --glass-bg: rgba(236, 243, 252, 0.88);
+    --glass-bg-card: rgba(238, 244, 252, 0.9);
+    --glass-bg-tint: rgba(228, 236, 250, 0.9);
+    --glass-bg-tint-b: rgba(250, 240, 243, 0.92);
+    --glass-bg-ok: rgba(221, 240, 228, 0.9);
+    --glass-bg-bad: rgba(248, 226, 228, 0.9);
+    --glass-dark: rgba(30, 45, 78, 0.95);
+    --glass-blur: 6px;
+    --glass-blur-sm: 4px;
+    --glass-blur-xs: 3px;
+    --overlay: rgba(15, 23, 42, 0.6);
   }
 }
 
