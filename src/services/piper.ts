@@ -340,6 +340,7 @@ async function fetchTgzFile(
  *   bump 前缀即可让旧缓存全部失效
  * - 隐私模式/不支持时 openModelCache 返回 null，自动走网络路径
  * ============================================================ */
+/** 缓存 key 前缀 + Cache Storage 名称 */
 const MODEL_CACHE_NAME = 'vowel-lab-models-v1';
 const MODEL_CACHE_KEY_PREFIX = 'v2:';
 
@@ -455,7 +456,9 @@ async function createSession(): Promise<LoadedSession> {
   }
 
   /* 阶段 2：会话创建——只尝试一次（worker → 主线程），失败即整体降级，
-   * 绝不再回到渠道循环（曾因此造成“下载 100% → create 失败 → 重新 0%”无尽循环） */
+   * 绝不再回到渠道循环（曾因此造成“下载 100% → create 失败 → 重新 0%”无尽循环）。
+   * 注：onnxruntime-web 1.18 不支持 wasmBinary 预置（1.19+ API），ort wasm
+   * 走 HTTP 缓存——首次加载含 10MB wasm 下载（手机 ~70s），之后秒开。 */
   const createTimeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`会话创建超时（${CREATE_TIMEOUT_MS / 1000}s）`)), CREATE_TIMEOUT_MS)
   );
