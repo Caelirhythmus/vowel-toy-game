@@ -3,7 +3,7 @@ import { genFreqQuestion, genQuestion, genSystemQuestion, genTypeQuestion } from
 import { applicablePositions, ruleCanApply } from '@/core/rules';
 import { wordText } from '@/core/words';
 import { CHANGE_TYPE_IDS, TIER_IDS } from '@/config/game';
-import { FAMILY_IDS, vowelPoolFor } from '@/config/families';
+import { FAMILY_IDS, vowelPoolFor, freqAvailableFor } from '@/config/families';
 import { RULES } from '@/config/rules';
 import { ruleExcludedFor, ruleTierFor } from '@/config/families';
 
@@ -132,6 +132,14 @@ describe('语系模式（family）', () => {
     }
   });
 
+  it('频率题可用性：泛语系/英语史/汉语史/罗曼史可用，斯拉夫史禁用（单档）', () => {
+    expect(freqAvailableFor('generic')).toBe(true);
+    expect(freqAvailableFor('english')).toBe(true);
+    expect(freqAvailableFor('chinese')).toBe(true);
+    expect(freqAvailableFor('romance')).toBe(true);
+    expect(freqAvailableFor('slavic')).toBe(false);
+  });
+
   it('汉语史频率题：可出题规则集合 = 高化/弱化/短高元音复化（easy 档位覆盖为 typical）', () => {
     const ids = new Set<string>();
     for (let i = 0; i < 400; i++) {
@@ -157,6 +165,24 @@ describe('语系模式（family）', () => {
       const q = genQuestion('mixed', 'hard', 'slavic');
       expect(q).not.toBeNull();
     }
+  });
+
+  it('回归：单档语系 mixed 模式频率权重归零——生成的题绝不出现 freq 题型', () => {
+    const kinds = new Set<string>();
+    for (let i = 0; i < 400; i++) {
+      const q = genQuestion('mixed', 'hard', 'slavic');
+      if (q) kinds.add(q.kind);
+    }
+    expect(kinds.has('freq')).toBe(false);
+    expect(kinds.has('type')).toBe(true);
+    expect(kinds.has('system')).toBe(true);
+    // 对比：泛语系 mixed 正常出现三种题型
+    const genericKinds = new Set<string>();
+    for (let i = 0; i < 400; i++) {
+      const q = genQuestion('mixed', 'hard');
+      if (q) genericKinds.add(q.kind);
+    }
+    expect(genericKinds.has('freq')).toBe(true);
   });
 
   it('回归：档位不全的语系（英语史无 rare）hard 频率题只出非空档位', () => {

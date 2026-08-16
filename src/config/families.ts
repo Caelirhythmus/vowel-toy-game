@@ -8,6 +8,7 @@
  * ============================================================ */
 import type { VowelPoolEntry } from './vowels';
 import { VOWEL_POOL } from './vowels';
+import { RULES } from './rules';
 import type { Rule, Tier } from '@/core/types';
 
 export type FamilyId = 'generic' | 'english' | 'chinese' | 'romance' | 'slavic';
@@ -108,4 +109,19 @@ export function ruleExcludedFor(rule: Rule, family: string): boolean {
 /** 规则在该语系中的档位（familyTiers 覆盖；未覆盖时用泛语系档位） */
 export function ruleTierFor(rule: Rule, family: string): Tier {
   return rule.familyTiers?.find((f) => f.family === family)?.tier ?? rule.tier;
+}
+
+/** 该语系实际非空的频率档位（排除矩阵 + 档位覆盖后） */
+export function nonEmptyTiersFor(family: string): Tier[] {
+  return (['typical', 'occasional', 'rare'] as Tier[]).filter((tier) =>
+    RULES.some((r) => !ruleExcludedFor(r, family) && ruleTierFor(r, family) === tier)
+  );
+}
+
+/**
+ * 频率题在该语系是否可用：非空档位 ≥ 2 才有区分度。
+ * 单档语系（如斯拉夫史只剩 typical）下频率题无意义，UI 禁用 + mixed 权重重分配。
+ */
+export function freqAvailableFor(family: string): boolean {
+  return nonEmptyTiersFor(family).length >= 2;
 }

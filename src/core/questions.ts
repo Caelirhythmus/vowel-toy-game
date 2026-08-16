@@ -6,7 +6,7 @@
 import type { Difficulty, PairQuestion, Question, Rule, SystemQuestion, Tier, Word } from './types';
 import { RULES } from '@/config/rules';
 import { MIXED_WEIGHTS, SYSTEM_WEIGHTS } from '@/config/game';
-import { ruleExcludedFor, ruleTierFor } from '@/config/families';
+import { ruleExcludedFor, ruleTierFor, nonEmptyTiersFor, freqAvailableFor } from '@/config/families';
 import { randomWord, makeWordForRule, wordText } from './words';
 import { applicablePositions, applyRule } from './rules';
 
@@ -60,9 +60,7 @@ export function genFreqQuestion(difficulty: Difficulty, family = 'generic'): Pai
   const want: Tier[] =
     difficulty === 'easy' ? ['typical', 'occasional'] : ['typical', 'occasional', 'rare'];
   // 语系实际非空档位（排除矩阵 + 档位覆盖后）
-  const tiers = want.filter((tier) =>
-    RULES.some((r) => !ruleExcludedFor(r, family) && ruleTierFor(r, family) === tier)
-  );
+  const tiers = want.filter((tier) => nonEmptyTiersFor(family).includes(tier));
   if (tiers.length < 2) return null; // 单档语系（如斯拉夫史）无区分度
   const tier = pick(tiers);
   const pool = RULES.filter(
@@ -101,9 +99,19 @@ export function genQuestion(
 ): Question | null {
   let k = kind;
   if (k === 'mixed') {
-    const r = Math.random() * (MIXED_WEIGHTS.type + MIXED_WEIGHTS.freq + MIXED_WEIGHTS.system);
-    if (r < MIXED_WEIGHTS.type) k = 'type';
-    else if (r < MIXED_WEIGHTS.type + MIXED_WEIGHTS.freq) k = 'freq';
+    // 频率题在单档语系（如斯拉夫史）无区分度：权重并入类型/系统题（按原比例 4:3）
+    let w = MIXED_WEIGHTS;
+    if (!freqAvailableFor(family)) {
+      const total = MIXED_WEIGHTS.type + MIXED_WEIGHTS.system;
+      w = {
+        type: MIXED_WEIGHTS.type / total,
+        freq: 0,
+        system: MIXED_WEIGHTS.system / total
+      };
+    }
+    const r = Math.random() * (w.type + w.freq + w.system);
+    if (r < w.type) k = 'type';
+    else if (r < w.type + w.freq) k = 'freq';
     else k = 'system';
   }
   if (k === 'type') return genTypeQuestion(difficulty, family);
