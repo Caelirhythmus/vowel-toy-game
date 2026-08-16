@@ -54,7 +54,7 @@ export const THEMES: ThemeDef[] = [
 ];
 
 /** 默认主题：改这里即可换默认（首次访问/无持久化时生效） */
-export const DEFAULT_THEME: ThemeId = 'mint';
+export const DEFAULT_THEME: ThemeId = 'sky';
 
 export function themeById(id: string): ThemeDef | undefined {
   return THEMES.find((t) => t.id === id);

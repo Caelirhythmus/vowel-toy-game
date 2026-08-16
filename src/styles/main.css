@@ -36,7 +36,9 @@
   --glass-shadow: 0 15px 35px rgba(40, 58, 92, 0.16);
 
   /* ---- 默认主题：晴空 Sky（明亮清爽蓝） ---- */
-  --bg-gradient: linear-gradient(135deg, #f2f7ff 0%, #dcebfa 100%);
+  --bg-gradient: linear-gradient(135deg, #edf5ff 0%, #d8e9fc 45%, #c4e0f8 100%);
+  --glass-panel: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(232, 244, 255, 0.58));
+  --glass-panel-reduce: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 244, 255, 0.94));
   --glass-bg: rgba(244, 250, 255, 0.62);
   --glass-bg-reduce: rgba(244, 250, 255, 0.9);
   --glass-bg-card: rgba(246, 251, 255, 0.74);
@@ -87,11 +89,18 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
-  /* 光斑（背景装饰层） */
-  --blob-1: rgba(64, 145, 235, 0.4);
-  --blob-2: rgba(56, 189, 215, 0.34);
-  --blob-3: rgba(140, 160, 235, 0.32);
-  --blob-4: rgba(94, 200, 190, 0.3);
+  /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
+  --blob-1: rgba(64, 145, 235, 0.46);
+  --blob-2: rgba(56, 189, 215, 0.38);
+  --blob-3: rgba(140, 160, 235, 0.36);
+  --blob-4: rgba(94, 200, 190, 0.34);
+  --blob-5: rgba(255, 170, 120, 0.22);
+  --blob-6: rgba(180, 140, 235, 0.26);
+
+  /* 漂浮粒子（小柔光点） */
+  --particle-1: rgba(127, 179, 238, 0.5);
+  --particle-2: rgba(95, 208, 216, 0.45);
+  --particle-3: rgba(184, 166, 236, 0.45);
 
   /* 元音图（SVG） */
   --chart-bg: #f6fafe;
@@ -108,7 +117,9 @@
 
 /* ---- 主题：晨曦 Dawn（暖白杏橙，柔和温润） ---- */
 :root[data-theme='dawn'] {
-  --bg-gradient: linear-gradient(135deg, #fff9f2 0%, #ffe9d8 100%);
+  --bg-gradient: linear-gradient(135deg, #fff8ef 0%, #ffe9d3 45%, #ffdfc4 100%);
+  --glass-panel: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(255, 240, 226, 0.58));
+  --glass-panel-reduce: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 240, 226, 0.94));
   --glass-bg: rgba(255, 251, 246, 0.62);
   --glass-bg-reduce: rgba(255, 251, 246, 0.9);
   --glass-bg-card: rgba(255, 251, 246, 0.74);
@@ -155,10 +166,16 @@
   --disabled-bg: #f2ebe2;
   --disabled-border: #b8a898;
 
-  --blob-1: rgba(236, 150, 88, 0.36);
-  --blob-2: rgba(250, 190, 150, 0.4);
-  --blob-3: rgba(240, 200, 110, 0.32);
-  --blob-4: rgba(240, 160, 160, 0.28);
+  --blob-1: rgba(236, 150, 88, 0.4);
+  --blob-2: rgba(250, 190, 150, 0.44);
+  --blob-3: rgba(240, 200, 110, 0.36);
+  --blob-4: rgba(240, 160, 160, 0.32);
+  --blob-5: rgba(120, 170, 230, 0.22);
+  --blob-6: rgba(220, 160, 190, 0.28);
+
+  --particle-1: rgba(245, 176, 126, 0.5);
+  --particle-2: rgba(247, 207, 154, 0.45);
+  --particle-3: rgba(232, 169, 184, 0.45);
 
   --chart-bg: #fffaf4;
   --chart-line: #f0e0cf;
@@ -174,7 +191,9 @@
 
 /* ---- 主题：薄荷 Mint（浅绿清新，自然放松） ---- */
 :root[data-theme='mint'] {
-  --bg-gradient: linear-gradient(135deg, #f0faf5 0%, #d9f2e4 100%);
+  --bg-gradient: linear-gradient(135deg, #eefaf4 0%, #d9f2e2 45%, #c8ecdb 100%);
+  --glass-panel: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(232, 248, 240, 0.58));
+  --glass-panel-reduce: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 248, 240, 0.94));
   --glass-bg: rgba(244, 252, 248, 0.62);
   --glass-bg-reduce: rgba(244, 252, 248, 0.9);
   --glass-bg-card: rgba(246, 252, 249, 0.74);
@@ -221,10 +240,16 @@
   --disabled-bg: #e7f1ec;
   --disabled-border: #a8bcb2;
 
-  --blob-1: rgba(60, 200, 150, 0.34);
-  --blob-2: rgba(70, 190, 180, 0.3);
-  --blob-3: rgba(140, 210, 120, 0.3);
-  --blob-4: rgba(120, 180, 225, 0.28);
+  --blob-1: rgba(60, 200, 150, 0.38);
+  --blob-2: rgba(70, 190, 180, 0.34);
+  --blob-3: rgba(140, 210, 120, 0.34);
+  --blob-4: rgba(120, 180, 225, 0.32);
+  --blob-5: rgba(240, 200, 100, 0.24);
+  --blob-6: rgba(160, 140, 220, 0.26);
+
+  --particle-1: rgba(124, 214, 168, 0.5);
+  --particle-2: rgba(134, 216, 196, 0.45);
+  --particle-3: rgba(169, 212, 122, 0.45);
 
   --chart-bg: #f4fbf8;
   --chart-line: #d5ecdf;
@@ -240,7 +265,9 @@
 
 /* ---- 主题：暮紫 Lavender（淡紫温柔，梦幻优雅） ---- */
 :root[data-theme='lavender'] {
-  --bg-gradient: linear-gradient(135deg, #faf7ff 0%, #ece3fb 100%);
+  --bg-gradient: linear-gradient(135deg, #f9f6ff 0%, #ebe1fb 45%, #dfd2f7 100%);
+  --glass-panel: linear-gradient(160deg, rgba(255, 255, 255, 0.68), rgba(244, 238, 255, 0.58));
+  --glass-panel-reduce: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(244, 238, 255, 0.94));
   --glass-bg: rgba(251, 248, 255, 0.62);
   --glass-bg-reduce: rgba(251, 248, 255, 0.9);
   --glass-bg-card: rgba(252, 250, 255, 0.74);
@@ -287,10 +314,16 @@
   --disabled-bg: #eee9f6;
   --disabled-border: #b3a8c9;
 
-  --blob-1: rgba(160, 130, 225, 0.36);
-  --blob-2: rgba(200, 150, 220, 0.3);
-  --blob-3: rgba(230, 160, 190, 0.26);
-  --blob-4: rgba(140, 170, 235, 0.28);
+  --blob-1: rgba(160, 130, 225, 0.4);
+  --blob-2: rgba(200, 150, 220, 0.34);
+  --blob-3: rgba(230, 160, 190, 0.3);
+  --blob-4: rgba(140, 170, 235, 0.32);
+  --blob-5: rgba(250, 200, 130, 0.22);
+  --blob-6: rgba(120, 200, 190, 0.24);
+
+  --particle-1: rgba(183, 161, 230, 0.5);
+  --particle-2: rgba(214, 168, 207, 0.45);
+  --particle-3: rgba(169, 196, 236, 0.45);
 
   --chart-bg: #faf8ff;
   --chart-line: #e2d8f3;
@@ -362,12 +395,82 @@
   animation-delay: -27s;
 }
 
+/* 点缀光斑：暖/紫色相，打破主冷色系的单调（低饱和低透明，不喧宾夺主） */
+.blob-5 {
+  --blob-color: var(--blob-5);
+  width: 46vmax;
+  height: 46vmax;
+  top: 10%;
+  left: 36%;
+  animation-duration: 28s;
+  animation-delay: -8s;
+}
+
+.blob-6 {
+  --blob-color: var(--blob-6);
+  width: 50vmax;
+  height: 50vmax;
+  bottom: -16vmax;
+  left: -12vmax;
+  animation-duration: 31s;
+  animation-delay: -17s;
+}
+
 @keyframes blob-drift {
   from {
     transform: translate3d(0, 0, 0) scale(1);
   }
   to {
     transform: translate3d(5vmax, -4vmax, 0) scale(1.1);
+  }
+}
+
+/* ---------- 漂浮粒子：小柔光点，缓慢升降，为背景加层次 ---------- */
+.bg-decor .particle {
+  position: absolute;
+  border-radius: 50%;
+  /* 柔边内建渐变，动画只动 transform（与光斑同策略） */
+  background: radial-gradient(circle, var(--particle-color) 0%, transparent 72%);
+  will-change: transform;
+  animation: particle-float 24s ease-in-out infinite alternate;
+}
+
+.particle-1 {
+  --particle-color: var(--particle-1);
+  width: 15vmin;
+  height: 15vmin;
+  top: 16%;
+  left: 8%;
+  animation-duration: 22s;
+  animation-delay: -4s;
+}
+
+.particle-2 {
+  --particle-color: var(--particle-2);
+  width: 10vmin;
+  height: 10vmin;
+  top: 62%;
+  right: 7%;
+  animation-duration: 26s;
+  animation-delay: -13s;
+}
+
+.particle-3 {
+  --particle-color: var(--particle-3);
+  width: 19vmin;
+  height: 19vmin;
+  bottom: 16%;
+  left: 32%;
+  animation-duration: 30s;
+  animation-delay: -20s;
+}
+
+@keyframes particle-float {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(2.5vmin, -5vmin, 0);
   }
 }
 
@@ -398,7 +501,7 @@ body {
      同时自身 backdrop-filter 已创建 stacking context（双重保险） */
   position: relative;
   z-index: 1;
-  background-color: var(--glass-bg);
+  background: var(--glass-panel);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
   border: 1px solid var(--glass-border);
@@ -1627,6 +1730,7 @@ select:disabled {
    → 面板提高到近实不透明（-reduce 变体），光斑保留（它们是背景的一部分） */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root {
+    --glass-panel: var(--glass-panel-reduce);
     --glass-bg: var(--glass-bg-reduce);
     --glass-bg-card: var(--glass-bg-card-reduce);
     --glass-bg-tint: var(--glass-bg-tint-reduce);
@@ -1646,6 +1750,7 @@ select:disabled {
    模糊只减到 6px 而非归零 */
 @media (prefers-reduced-transparency: reduce) {
   :root {
+    --glass-panel: var(--glass-panel-reduce);
     --glass-bg: var(--glass-bg-reduce);
     --glass-bg-card: var(--glass-bg-card-reduce);
     --glass-bg-tint: var(--glass-bg-tint-reduce);
@@ -1669,7 +1774,8 @@ select:disabled {
     --glass-blur-xs: 4px;
   }
 
-  .bg-decor .blob {
+  .bg-decor .blob,
+  .bg-decor .particle {
     animation: none;
   }
 }
