@@ -345,7 +345,10 @@ select:disabled {
 /* ---------- 题目区 ---------- */
 .question-area {
   min-height: 260px;
-  scroll-margin-top: 8px;
+  /* 换题滚动时给 sticky 计时条让位（top:8px + 条高 ≈ 2.4rem + 26px），
+     否则计时条会钉在视口顶部盖住题目提示文本；
+     用 rem 计算，系统字体放大时余量同步增大 */
+  scroll-margin-top: calc(2.4rem + 26px);
 }
 
 .prompt {

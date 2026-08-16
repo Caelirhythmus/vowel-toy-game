@@ -46,7 +46,12 @@ const prompt = computed(() => {
 });
 const speakSupported = speechService.supported();
 
-/* ---------- 换题自动回到题目区：新题出现时用户可能正停在页面底部 ---------- */
+/* ---------- 换题自动回到题目区：新题出现时用户可能正停在页面底部 ----------
+ * 注意两点：
+ * 1) 题目区顶部已在视口上半部时不滚动——避免点「开始」时页面突兀跳动；
+ * 2) 滚动对齐位置（scroll-margin-top）必须留出 sticky 计时条的高度，
+ *    否则计时条被钉在视口顶部时会盖住题目提示文本。
+ */
 const areaEl = ref<HTMLElement | null>(null);
 const reducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -55,8 +60,13 @@ watch(
   () => game.state.question,
   () => {
     void nextTick(() => {
+      const el = areaEl.value;
+      if (!el || typeof window === 'undefined') return;
+      const r = el.getBoundingClientRect();
+      // 题目区顶部已在视口内（上半部）：无需滚动，保持用户当前位置
+      if (r.top >= 0 && r.top <= window.innerHeight * 0.5) return;
       try {
-        areaEl.value?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+        el.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
       } catch {
         /* 测试环境等无 scrollIntoView 实现时静默 */
       }
