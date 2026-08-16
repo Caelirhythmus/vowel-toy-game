@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { GamePhase, Question } from '@/core';
+import type { GamePhase, Question, Word } from '@/core';
 import { wordText } from '@/core';
 import { TIER_OPTIONS, TYPE_OPTIONS } from '@/config/game';
 import { useI18n } from '@/composables/useI18n';
+import { speechService } from '@/services/audio';
 
 const props = defineProps<{
   question: Question;
@@ -25,6 +26,12 @@ const isSystem = computed(() => props.question.kind === 'system');
 const systemWords = computed(() =>
   props.question.kind === 'system' ? props.question.words : []
 );
+
+/** 系统题每个词都可点读（与词对题的发音按钮同一链路） */
+const speakSupported = speechService.supported();
+function speakWord(word: Word) {
+  void speechService.playWord(word);
+}
 </script>
 
 <template>
@@ -40,17 +47,32 @@ const systemWords = computed(() =>
       </button>
     </template>
     <template v-else-if="isSystem">
-      <button
-        v-for="(w, i) in systemWords"
-        :key="i"
-        class="opt-btn sys-word"
-        :class="{ selected: selection.has(i) }"
-        :disabled="disabled(phase)"
-        @click="emit('toggle', i)"
-      >
-        {{ wordText(w) }}
-      </button>
-      <button class="btn start" :disabled="disabled(phase)" @click="emit('submit')">{{ t('btn.submit') }}</button>
+      <div class="sys-list">
+        <div v-for="(w, i) in systemWords" :key="i" class="sys-row">
+          <button
+            class="opt-btn sys-word"
+            :class="{ selected: selection.has(i) }"
+            :disabled="disabled(phase)"
+            :aria-pressed="selection.has(i)"
+            @click="emit('toggle', i)"
+          >
+            {{ wordText(w) }}
+          </button>
+          <button
+            v-if="speakSupported"
+            class="sys-speak"
+            :title="t('btn.speak.note')"
+            :aria-label="`${t('btn.speak')} ${wordText(w)}`"
+            @click="speakWord(w)"
+          >
+            🔊
+          </button>
+        </div>
+      </div>
+      <div class="sys-footer">
+        <span class="sys-count">{{ t('sys.selected', { n: selection.size }) }}</span>
+        <button class="btn start" :disabled="disabled(phase) || selection.size === 0" @click="emit('submit')">{{ t('btn.submit') }}</button>
+      </div>
     </template>
   </div>
 </template>

@@ -76,6 +76,7 @@ onUnmounted(() => {
       :stats="game.state.stats"
       :mistakes="game.state.mistakes"
       @close="game.closeModal"
+      @restart="game.start"
     />
   </div>
 </template>

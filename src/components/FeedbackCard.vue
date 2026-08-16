@@ -10,6 +10,8 @@ const { t, lang } = useI18n();
 
 const q = computed(() => props.state.question);
 const last = computed(() => props.state.lastResult);
+/** 限时模式：答错扣 1 秒（在反馈中明示，避免玩家对时间跳变困惑） */
+const timed = computed(() => props.state.settings.timeSec > 0);
 
 const typeName = (id: string) => TYPE_OPTIONS.find((x) => x.id === id)?.[lang.value] ?? id;
 const tierName = (id: string) => TIER_OPTIONS.find((x) => x.id === id)?.[lang.value] ?? id;
@@ -46,7 +48,7 @@ const systemLines = computed(() => {
 </script>
 
 <template>
-  <div class="feedback" :class="last ? (last.ok ? 'ok' : 'bad') : ''">
+  <div class="feedback" :class="last ? (last.ok ? 'ok' : 'bad') : ''" role="status" aria-live="polite">
     <template v-if="last && q">
       <div v-if="last.ok" class="fb-line">
         <strong>{{ t('fb.correct') }}</strong> {{ t('fb.answer') }}：{{ answerLabel }}
@@ -54,6 +56,8 @@ const systemLines = computed(() => {
       <div v-else class="fb-line">
         <strong>{{ t('fb.wrong') }}</strong>
       </div>
+
+      <div v-if="!last.ok && timed" class="fb-line penalty">⚠ {{ t('fb.penalty') }}</div>
 
       <template v-if="last.ok">
         <div class="fb-line">

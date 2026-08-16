@@ -126,6 +126,13 @@ select {
   min-width: 150px;
 }
 
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #e9edf5;
+  border-color: #aab2c0;
+}
+
 .btn-row {
   display: flex;
   gap: 10px;
@@ -164,6 +171,28 @@ select {
   color: #fff;
 }
 
+/* 重新开始的两步确认态：橙色警示，再点一次才生效 */
+.btn.start.confirm {
+  background-color: #e67e22;
+}
+
+.btn.end-round {
+  background-color: #fff;
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+}
+
+.btn.next {
+  background-color: #4b6cb7;
+  color: #fff;
+  padding: 8px 18px;
+}
+
+.btn.again {
+  background-color: #2ecc71;
+  color: #fff;
+}
+
 .btn.reset {
   background-color: #e74c3c;
   color: #fff;
@@ -177,6 +206,8 @@ select {
 
 /* ---------- 计时器 ---------- */
 .timer {
+  position: relative;
+  overflow: hidden;
   text-align: center;
   font-size: 1.15rem;
   font-weight: 700;
@@ -185,6 +216,44 @@ select {
   background: #f0f4ff;
   border-radius: 12px;
   padding: 8px 0;
+}
+
+/* 剩余时间进度条（随 tick 平滑收窄） */
+.timer-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #4b6cb7;
+  opacity: 0.12;
+  transition: width 0.8s linear;
+}
+
+.timer-row {
+  position: relative;
+  z-index: 1;
+}
+
+/* 最后 10 秒：警示底色 + 红色脉冲光环 */
+.timer.urgent {
+  background: #fdecea;
+  border: 2px solid #e74c3c;
+  animation: urgent-pulse 1s ease-in-out infinite;
+}
+
+.timer.urgent .timer-value {
+  color: #c0392b;
+}
+
+@keyframes urgent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(231, 76, 60, 0);
+  }
 }
 
 .timer-value {
@@ -204,6 +273,43 @@ select {
   color: #182848;
   margin-bottom: 16px;
   line-height: 1.5;
+}
+
+/* ---------- 开局引导（idle 占位） ---------- */
+.idle-hint {
+  text-align: center;
+  background: #f0f4ff;
+  border: 2px dashed #9db3d3;
+  border-radius: 14px;
+  padding: 20px 18px;
+  margin-bottom: 16px;
+}
+
+.idle-hint h2 {
+  color: #182848;
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+
+.idle-hint ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ---------- 答对后的自动跳题提示条 ---------- */
+.next-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  color: #555;
+  font-size: 0.95rem;
 }
 
 .words {
@@ -361,11 +467,13 @@ select {
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 0.85rem;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.45;
   pointer-events: none;
   z-index: 5;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  max-width: 240px;
+  max-width: 210px;
 }
 
 /* A→B 路径描画动画（遵 reduced-motion） */
@@ -481,6 +589,59 @@ select {
   font-family: 'Charis SIL', 'Segoe UI', 'DejaVu Sans', 'Gentium Plus', sans-serif;
 }
 
+/* 系统预测题：词表行 + 点读 + 已选计数 */
+.sys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.sys-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sys-row .sys-word {
+  flex: 1;
+}
+
+.sys-speak {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #4b6cb7;
+  background: #fff;
+  color: #4b6cb7;
+  border-radius: 999px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sys-speak:hover {
+  background: #4b6cb7;
+}
+
+.sys-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.sys-count {
+  color: #555;
+  font-size: 0.9rem;
+}
+
 /* ---------- 反馈 ---------- */
 .feedback {
   text-align: left;
@@ -512,6 +673,12 @@ select {
 
 .fb-line:last-child {
   margin-bottom: 0;
+}
+
+/* 限时模式答错扣时的明示 */
+.fb-line.penalty {
+  color: #c0392b;
+  font-weight: 600;
 }
 
 .tier-badge {
@@ -708,6 +875,27 @@ select {
 
 .no-mistakes {
   color: #27ae60;
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.modal-actions .btn {
+  margin-top: 0;
+}
+
+.hist-best {
+  font-size: 0.95rem;
+  opacity: 0.92;
+}
+
+.new-record {
+  color: #e67e22;
   font-weight: 700;
 }
 

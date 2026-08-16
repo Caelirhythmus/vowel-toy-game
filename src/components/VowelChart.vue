@@ -141,6 +141,13 @@ function hideTip() {
   hoverSym.value = null;
 }
 
+/** 特征卡定位：靠近左右边缘时向内收，避免溢出容器/视口 */
+const tipStyle = computed(() => {
+  if (!hovered.value) return {};
+  const left = Math.min(85, Math.max(15, hovered.value.x * 100));
+  return { left: left + '%', top: hovered.value.y * 100 + '%' };
+});
+
 /* ---------- 发音点播（仅单元音有权威录音；复元音按用户决定不发音） ---------- */
 function speakVowel(symbol: string) {
   speechService.playVowel(symbol);
@@ -274,7 +281,7 @@ const colLabels = [
       </svg>
 
       <!-- 悬停特征卡 -->
-      <div v-if="hovered" class="chart-tip" :style="{ left: hovered.x * 100 + '%', top: hovered.y * 100 + '%' }">
+      <div v-if="hovered" class="chart-tip" :style="tipStyle">
         {{ hovered.text }}
       </div>
     </div>

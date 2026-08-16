@@ -77,7 +77,16 @@ const speakSupported = speechService.supported();
 
 <template>
   <div class="question-area">
-    <p class="prompt">{{ prompt }}</p>
+    <p v-if="prompt" class="prompt">{{ prompt }}</p>
+
+    <div v-if="!q" class="idle-hint">
+      <h2>{{ t('idle.hint.title') }}</h2>
+      <ul>
+        <li>{{ t('idle.hint.line1') }}</li>
+        <li>{{ t('idle.hint.line2') }}</li>
+        <li>{{ t('idle.hint.line3') }}</li>
+      </ul>
+    </div>
 
     <div v-if="q && q.kind !== 'system'" class="words">
       <div class="word-box a">
@@ -104,5 +113,10 @@ const speakSupported = speechService.supported();
     />
 
     <FeedbackCard :state="game.state" />
+
+    <div v-if="q && game.state.phase === 'answered'" class="next-bar">
+      <span>{{ t('fb.autoNext') }}</span>
+      <button class="btn next" @click="game.nextQuestion()">{{ t('btn.next') }}</button>
+    </div>
   </div>
 </template>

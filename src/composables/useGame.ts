@@ -23,6 +23,9 @@ const selection = ref<Set<number>>(new Set());
 
 let advanceTimer: number | null = null;
 
+/** 答对后自动进入下一题的等待时长：留足时间阅读规则讲解（可手动跳过） */
+const ADVANCE_DELAY_MS = 3000;
+
 function disposeAdvance() {
   if (advanceTimer !== null) {
     clearTimeout(advanceTimer);
@@ -52,7 +55,7 @@ function afterAnswer() {
         core.next(state, Date.now());
         selection.value = new Set();
       }
-    }, 1800);
+    }, ADVANCE_DELAY_MS);
   }
 }
 
@@ -104,6 +107,15 @@ export function useGame() {
     afterAnswer();
   }
 
+  /** 手动跳过等待，立即进入下一题（答对后可用） */
+  function nextQuestion() {
+    if (state.phase !== 'answered') return;
+    disposeAdvance();
+    if (core.next(state, Date.now())) {
+      selection.value = new Set();
+    }
+  }
+
   /** 计时心跳（App 挂载后每 250ms 调用） */
   function tick() {
     if (state.phase === 'idle' || state.phase === 'over') return;
@@ -144,6 +156,7 @@ export function useGame() {
     answerOpt,
     toggleWord,
     submitSystem,
+    nextQuestion,
     tick,
     closeModal,
     dispose
