@@ -89,6 +89,10 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
+  /* 统计卡「已答」色：钳制在蓝紫信息色区（避免与绿/琥珀语义色撞色；
+     本主题为 sky：蓝 = accent 本色） */
+  --stat-total: #3d7edb;
+
   /* ---- 频率徽章：主题色相基准 + 默认配色「光谱」 ----
      机械推导：三档 = 主题基准色相 + 固定偏移（典型 +46°、
      偶见 +3°、罕见 -24°），饱和度/亮度固定——任意主题下
@@ -178,6 +182,9 @@
   --disabled-bg: #f2ebe2;
   --disabled-border: #b8a898;
 
+  /* 统计卡「已答」色：蓝紫信息色区（dawn 主题为橙，须离开橙区避免与连对琥珀撞色） */
+  --stat-total: #4a67b4;
+
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 25deg;
 
@@ -252,6 +259,9 @@
   --disabled-bg: #e7f1ec;
   --disabled-border: #a8bcb2;
 
+  /* 统计卡「已答」色：蓝紫信息色区（mint 主题 accent 为薄荷绿，须离开绿区避免与正确绿撞色） */
+  --stat-total: #3a7cc0;
+
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 162deg;
 
@@ -325,6 +335,9 @@
   --line-strong: #c2b0e6;
   --disabled-bg: #eee9f6;
   --disabled-border: #b3a8c9;
+
+  /* 统计卡「已答」色：蓝紫信息色区（本主题为 lavender：紫 = accent 本色） */
+  --stat-total: #7c5cd6;
 
   /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
   --tier-hue: 256deg;
@@ -1465,7 +1478,7 @@ select:disabled {
 }
 
 .stat.total {
-  --stat-color: var(--accent);
+  --stat-color: var(--stat-total);
 }
 
 .stat.streak {
