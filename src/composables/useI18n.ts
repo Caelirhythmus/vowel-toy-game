@@ -15,8 +15,13 @@ const lang = ref<Lang>(loadLang());
 
 function applyDom() {
   document.documentElement.lang = lang.value;
-  document.title = coreT('app.title', lang.value) + ' · Vowel Change Lab';
+  // en 的 app.title 即 "Vowel Change Lab"，不再拼接后缀（避免重复）
+  const title = coreT('app.title', lang.value);
+  document.title = lang.value === 'en' ? title : `${title} · Vowel Change Lab`;
 }
+
+// 初始同步：持久化语言（上次选了 en）刷新后立即反映到 <html lang> 与 <title>
+if (typeof document !== 'undefined') applyDom();
 
 export function useI18n() {
   function setLang(l: Lang) {
