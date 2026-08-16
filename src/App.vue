@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useGame } from '@/composables/useGame';
 import { useI18n } from '@/composables/useI18n';
+import { useCompactLayout } from '@/composables/useViewport';
 import { speechService } from '@/services/audio';
 import { applicablePositions, applyRule, wordText } from '@/core';
 import LangToggle from '@/components/LangToggle.vue';
@@ -16,6 +17,13 @@ import GameOverModal from '@/components/GameOverModal.vue';
 
 const game = useGame();
 const { t } = useI18n();
+const { compact } = useCompactLayout();
+
+/* ---------- 信息分层：手机上次要内容折叠成入口 ---------- */
+/** 紧凑模式（手机）下：元音图默认折叠；桌面常显 */
+const chartOpen = ref(false);
+/** 速查表：桌面默认展开、手机默认折叠（用户手动切换后保持） */
+const sheetOpen = ref(!compact.value);
 
 /* ---------- 元音图数据（图表位于页面级右栏，数据在此汇总） ---------- */
 const pair = computed(() => {
@@ -44,6 +52,11 @@ const diff = computed(() => {
     });
   });
   return { sources: [...sources], targets: [...targets] };
+});
+
+/** 手机上答对系统题时自动展开元音图，让 diff 高亮可见 */
+watch(diff, (d) => {
+  if (compact.value && d) chartOpen.value = true;
 });
 
 let tickTimer: number | null = null;
@@ -81,17 +94,31 @@ onUnmounted(() => {
         </div>
         <aside class="game-side">
           <StatsBar :stats="game.state.stats" />
-          <VowelChart :a="pair ? pair.a : null" :b="pair ? pair.b : null" :anim-key="pairKey" :diff="diff" />
+          <!-- 手机：元音图折叠成开关条，点开查看（答对系统题时自动展开） -->
+          <template v-if="compact">
+            <button class="info-toggle chart-toggle" :aria-expanded="chartOpen" @click="chartOpen = !chartOpen">
+              <span>📊 {{ t('chart.title') }}</span>
+              <span aria-hidden="true">{{ chartOpen ? '▴' : '▾' }}</span>
+            </button>
+            <div v-show="chartOpen" class="chart-collapse-body">
+              <VowelChart :a="pair ? pair.a : null" :b="pair ? pair.b : null" :anim-key="pairKey" :diff="diff" />
+            </div>
+          </template>
+          <!-- 桌面：图表常驻 -->
+          <VowelChart v-else :a="pair ? pair.a : null" :b="pair ? pair.b : null" :anim-key="pairKey" :diff="diff" />
         </aside>
       </div>
     </section>
 
     <section class="info">
       <ModelNotes />
-      <details open>
-        <summary>{{ t('info.types') }}</summary>
+      <button class="info-toggle" :aria-expanded="sheetOpen" @click="sheetOpen = !sheetOpen">
+        <span>{{ t('info.types') }}</span>
+        <span aria-hidden="true">{{ sheetOpen ? '▴' : '▾' }}</span>
+      </button>
+      <div v-show="sheetOpen">
         <CheatSheet />
-      </details>
+      </div>
       <details>
         <summary>{{ t('refs.title') }}</summary>
         <ul class="refs">

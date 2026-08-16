@@ -141,13 +141,41 @@ header .subtitle {
   }
 }
 
+.settings-wrap {
+  margin-bottom: 10px;
+}
+
 .settings {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+}
+
+/* 紧凑模式（手机）：设置折叠成一行，点 ⚙ 展开字段 */
+.settings-compact {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-toggle {
+  background-color: #f0f4ff;
+  color: #182848;
+  border: 2px solid #4b6cb7;
+  padding: 9px 16px;
+}
+
+.settings-toggle:hover:not(:disabled) {
+  background-color: #dbe6ff;
+}
+
+.settings.fields-only {
+  margin-top: 10px;
 }
 
 .setting {
@@ -825,6 +853,34 @@ select:disabled {
   border-radius: 0 0 20px 20px;
 }
 
+/* 折叠开关条（速查表 / 手机端元音图）：与 details summary 同视觉语言 */
+.info-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  margin-bottom: 10px;
+  cursor: pointer;
+  color: #182848;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* 手机端元音图折叠条：卡片式 */
+.game-side .chart-toggle {
+  background: #fbfcfe;
+  border: 1px solid #e3e9f2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  box-shadow: none;
+}
+
 .info details {
   margin-bottom: 14px;
 }
@@ -987,11 +1043,49 @@ select:disabled {
 }
 
 /* ---------- 响应式 ---------- */
-@media (max-width: 768px) {
-  header h1 {
-    font-size: 1.6rem;
+
+/* 紧凑模式断点（与 useCompactLayout 一致）：手机端信息分层 */
+@media (max-width: 959px) {
+  /* 统计压缩成一行 4 列（label 小字），不再换行占两行 */
+  .game-side .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
   }
 
+  .game-side .stat {
+    min-width: 0;
+    padding: 6px 4px;
+  }
+
+  .game-side .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .game-side .stat-label {
+    font-size: 0.72rem;
+  }
+
+  /* 头部压缩：副标题小字，减少首屏浪费 */
+  header {
+    padding: 18px 20px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+  header .subtitle {
+    font-size: 0.92rem;
+  }
+
+  /* 手机折叠设置条的按钮更紧凑 */
+  .settings-compact .btn {
+    padding: 9px 14px;
+  }
+}
+
+@media (max-width: 768px) {
   /* 语言切换按钮与标题并排，取代原先负 margin 上移的 hack */
   .header-row {
     flex-direction: row;
@@ -1029,7 +1123,8 @@ select:disabled {
     font-size: 2rem;
   }
 
-  .settings {
+  .settings,
+  .settings.fields-only {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1040,14 +1135,5 @@ select:disabled {
 
   .btn-row {
     justify-content: center;
-  }
-
-  .stat {
-    min-width: 88px;
-    padding: 8px 14px;
-  }
-
-  .stat-value {
-    font-size: 1.4rem;
   }
 }
