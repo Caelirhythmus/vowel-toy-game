@@ -5,7 +5,7 @@ import QuestionArea from '@/components/QuestionArea.vue';
 import { useGame } from '@/composables/useGame';
 
 /** 捕获 useSpeech 注册的 piper 状态回调，手动驱动 UI 状态 */
-type StatusCb = (s: string, pct?: number | null) => void;
+type StatusCb = (s: string, pct?: number | null, phase?: string | null) => void;
 const listeners: StatusCb[] = [];
 
 vi.mock('@/services/piper', async (importOriginal) => {
@@ -58,6 +58,13 @@ describe('QuestionArea 发音按钮（Piper 加载状态）', () => {
     for (const cb of listeners) cb('loading', 45);
     await nextTick();
     expect(wrapper.find('.mini-btn').text()).toBe('语音模型加载中… 45%');
+  });
+
+  it('初始化阶段（资源就绪、正在编译）：显示独立文案而非“100% 假进度”', async () => {
+    const wrapper = mount(QuestionArea);
+    for (const cb of listeners) cb('loading', 100, 'init');
+    await nextTick();
+    expect(wrapper.find('.mini-btn').text()).toBe('正在初始化语音引擎（首次需编译，请稍候）…');
   });
 
   it('就绪后恢复“发音”并可点击', async () => {

@@ -11,7 +11,7 @@ import FeedbackCard from './FeedbackCard.vue';
 
 const game = useGame();
 const { t, lang } = useI18n();
-const { status: piperStatus, progress: piperProgress, error: piperError } = useSpeech();
+const { status: piperStatus, progress: piperProgress, phase: piperPhase, error: piperError } = useSpeech();
 
 function speakWord(word: Word) {
   void speechService.playWord(word);
@@ -26,9 +26,11 @@ const speakTitle = computed(() => {
   return t('btn.speak.note');
 });
 
-/** 发音按钮文案：加载中提示（含进度）/ 主引擎不可用时标注回退 */
+/** 发音按钮文案：加载中提示（下载阶段含进度；初始化阶段独立文案）/ 主引擎不可用时标注回退 */
 const speakLabel = computed(() => {
   if (piperStatus.value === 'loading') {
+    // init 阶段：资源已就绪，正在编译/解析（无进度可报），用独立文案避免“100% 假进度”观感
+    if (piperPhase.value === 'init') return t('btn.speak.init');
     if (piperProgress.value != null) return t('btn.speak.loading.pct', { pct: piperProgress.value });
     return t('btn.speak.loading');
   }

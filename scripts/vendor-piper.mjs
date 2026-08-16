@@ -7,7 +7,7 @@
  *    否则保留 float（运行时会自动回退到 float 模型）
  * 产物不提交仓库（.gitignore 已含 public/vendor/）
  * ============================================================ */
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { dirname, join } from 'node:path';
@@ -25,14 +25,27 @@ if (!existsSync(ortSrc)) {
   process.exit(1);
 }
 
-/* ---------- 1) onnxruntime-web（保留 esm/ 子目录 + wasm 在父目录的包结构） ---------- */
-mkdirSync(join(ortDest, 'esm'), { recursive: true });
+/* ---------- 1) onnxruntime-web（1.19+ 布局：根目录 ESM 入口 + 线程版 wasm 及 glue） ----------
+ * 1.20 实测：esm/ 子目录已不存在；ESM 入口为根目录 ort.min.mjs；
+ * wasm 仅发布线程版 ort-wasm-simd-threaded.wasm（~10.7MB）+ 同目录
+ * glue ort-wasm-simd-threaded.mjs（ort 按此文件名硬编码加载 glue）。
+ * 非线程构建已移除；非隔离环境（GH Pages/Vercel 无 COOP/COEP）由
+ * ort 运行时降级单线程（wasmBinary 注入后无网络请求）。
+ */
+mkdirSync(ortDest, { recursive: true });
+/* 清理 1.18 时代的旧布局产物（esm/ 子目录、非线程 wasm）——1.19+ 不再使用，
+ * 避免陈旧文件残留（~20MB）与误导 */
+for (const stale of ['esm', 'ort-wasm-simd.wasm', 'ort-wasm.wasm']) {
+  const p = join(ortDest, stale);
+  if (existsSync(p)) {
+    rmSync(p, { recursive: true, force: true });
+    console.log('[vendor-piper] 清理旧布局产物：onnxruntime-web/' + stale);
+  }
+}
 const ortFiles = [
-  ['esm/ort.min.js', 'esm/ort.min.js'],
-  ['esm/ort.wasm.min.js', 'esm/ort.wasm.min.js'],
-  // 非线程 SIMD + 无 SIMD 通用回退（线程版需要 COOP/COEP，GH Pages 不可用，不复制）
-  ['ort-wasm-simd.wasm', 'ort-wasm-simd.wasm'],
-  ['ort-wasm.wasm', 'ort-wasm.wasm']
+  ['ort.min.mjs', 'ort.min.mjs'],
+  ['ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.mjs'],
+  ['ort-wasm-simd-threaded.wasm', 'ort-wasm-simd-threaded.wasm']
 ];
 for (const [rel, out] of ortFiles) {
   copyFileSync(join(ortSrc, rel), join(ortDest, out));

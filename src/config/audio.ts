@@ -67,7 +67,8 @@ export const ESPEAK_CONSONANTS: Record<string, string> = {
 /* ============================================================
  * Piper（神经 TTS，主引擎）：en_US-joe-medium（CC0）
  * - 模型/配置由 scripts/vendor-piper.mjs 预置到 public/vendor/piper/
- * - onnxruntime-web@1.18（esm/ 子目录 + wasm 在父目录，保留包结构）
+ * - onnxruntime-web@1.20.x（根目录 ort.min.mjs + 线程版 wasm 及 glue；
+ *   1.18 的 esm/ 子目录已移除；wasm 经 wasmBinary 预取注入 Cache Storage）
  * - 音素名 → id 表在语音配置 .onnx.json 里，运行时拉取；
  *   此处只做“我们的符号 → Piper 音素名序列”（纯映射，可测）
  * - 模型源：多渠道候选（按顺序尝试，失败自动降级）。
@@ -175,7 +176,7 @@ export const PIPER_VOICE = {
     { label: 'int8 本地', timeoutMs: 90_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
   ] as ModelCandidate[],
   configPath: 'vendor/piper/en_US-joe-medium.onnx.json',
-  /** onnxruntime-web 目录（esm 入口 + wasm 二进制） */
+  /** onnxruntime-web 目录（根目录 ESM 入口 ort.min.mjs + 线程版 wasm 及 glue） */
   ortPath: 'vendor/onnxruntime-web'
 } as const;
 

@@ -16,7 +16,7 @@ interface OrtSession {
   run(feeds: Record<string, OrtTensor>): Promise<Record<string, OrtTensor>>;
 }
 interface OrtApi {
-  env: { wasm: { wasmPaths?: string; numThreads?: number } };
+  env: { wasm: { wasmPaths?: string; numThreads?: number; wasmBinary?: Uint8Array } };
   InferenceSession: {
     create(
       model: Uint8Array,
@@ -27,7 +27,15 @@ interface OrtApi {
 }
 
 type WorkerMessage =
-  | { type: 'init'; ortUrl: string; wasmDir: string; modelBytes: Uint8Array; config: PiperConfig }
+  | {
+      type: 'init';
+      ortUrl: string;
+      wasmDir: string;
+      modelBytes: Uint8Array;
+      /** 预取的 ort wasm 字节（Cache Storage 命中时注入，跳过网络下载） */
+      wasmBytes: Uint8Array | null;
+      config: PiperConfig;
+    }
   | { type: 'synth'; ids: number[]; requestId: number };
 
 type WorkerReply =
@@ -49,10 +57,13 @@ scope.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   const msg = e.data;
   try {
     if (msg.type === 'init') {
+      // 1.19+ ESM 入口在根目录 ort.min.mjs（1.18 的 esm/ 子目录已不存在）
       const mod = await import(/* @vite-ignore */ msg.ortUrl);
       ort = (mod.default ?? mod) as OrtApi;
       ort.env.wasm.wasmPaths = msg.wasmDir;
       ort.env.wasm.numThreads = 1;
+      // 预取命中：注入 wasm 字节，ort 不再网络请求 10MB wasm（首次加载提速关键）
+      if (msg.wasmBytes) ort.env.wasm.wasmBinary = msg.wasmBytes;
       config = msg.config;
       session = await ort.InferenceSession.create(msg.modelBytes, {
         executionProviders: ['wasm'],

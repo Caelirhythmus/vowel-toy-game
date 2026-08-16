@@ -1,6 +1,11 @@
 /* ============================================================
  * services：Piper 神经 TTS 适配器（主引擎，onnxruntime-web WASM）
- * - 懒加载：首次合成时动态 import public/vendor/onnxruntime-web/esm/ort.min.js
+ * - 懒加载：首次合成时动态 import public/vendor/onnxruntime-web/ort.min.mjs
+ *   （onnxruntime-web 1.19+ 布局：ESM 入口在根目录，wasm 仅线程版
+ *   ort-wasm-simd-threaded.wasm + 同目录 glue；1.18 的 esm/ 子目录已移除）
+ * - wasm 预取：与模型下载并行把 ort wasm 拉进 Cache Storage，创建会话时
+ *   经 ort.env.wasm.wasmBinary 注入（跳过网络下载）——手机首次加载
+ *   从 ~70s（模型 + 10MB wasm 串行）压到 ~max(模型, wasm) 下载 + 编译
  * - 音色：en_US-joe-medium（CC0，22.05kHz；int8 量化 ~18MB 随仓库提交，
  *   float ~60MB 由 vendor 脚本预置作回退）
  * - 输入：显式音素 id 序列（core/piper.ts 组装 BOS+音素+pad+EOS），
@@ -25,7 +30,7 @@ interface OrtSession {
   run(feeds: Record<string, OrtTensor>): Promise<Record<string, OrtTensor>>;
 }
 interface OrtApi {
-  env: { wasm: { wasmPaths?: string; numThreads?: number } };
+  env: { wasm: { wasmPaths?: string; numThreads?: number; wasmBinary?: Uint8Array } };
   InferenceSession: {
     create(
       model: Uint8Array,
@@ -81,18 +86,108 @@ async function fetchWithProgress(
 
 let ortPromise: Promise<OrtApi> | null = null;
 
+/* ============================================================
+ * ort wasm 预取（onnxruntime-web 1.19+，wasmBinary API）
+ * 背景：1.18 不支持 wasmBinary（dist 源码 0 次出现），ort wasm 只能
+ * 走 HTTP 缓存——手机首次加载 10MB ort-wasm-simd-threaded.wasm 下载
+ * + 编译与模型下载串行，总计 ~70s。1.20 支持 wasmBinary：把预取的
+ * wasm 字节注入 ort.env.wasm.wasmBinary，跳过网络请求。
+ * - SIMD 探针：复用 ort 自带的探针字节（与 ort 的 wasm 选择一致，
+ *   1.20 的 ort.min.mjs 中 am() 校验的正是这 45 字节）
+ * - 1.19+ 仅发布线程版 wasm（非线程构建已移除）；无 SIMD 的设备
+ *   ort 自身也会抛错（"WebAssembly SIMD is not supported"），预取
+ *   直接跳过，链路最终降级 espeak
+ * - 缓存：沿用 vowel-lab-models-v1（Cache Storage），key 用独立
+ *   wasm: 前缀，与模型缓存（v2: 前缀）互不影响
+ * ============================================================ */
+/** 1.19+ 唯一 wasm 文件（simd + 线程版合一；非隔离环境 ort 自动降级单线程） */
+const ORT_WASM_FILE = 'ort-wasm-simd-threaded.wasm';
+/** 已知字节数（实测 1.20.1 dist，exact 锁定版本不变；用于下载进度折算，
+ *  与模型 knownBytes 同模式——content-length 可能因压缩/分块失真） */
+const ORT_WASM_BYTES = 11246032;
+/** ort 自带 SIMD 探针（WebAssembly.validate 通过 = 支持 SIMD，与 ort 选择一致） */
+const SIMD_PROBE = new Uint8Array([
+  0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 2, 1, 0, 10, 30, 1, 28, 0, 65, 0, 253, 15, 253, 12, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 253, 186, 1, 26, 11
+]);
+
+/** wasm 缓存 key（在 v2: 前缀之后再用 wasm: 前缀区分） */
+function wasmCacheKey(): string {
+  return `wasm:${ORT_WASM_FILE}`;
+}
+
+let wasmPrefetchPromise: Promise<void> | null = null;
+
+/** 预取 ort wasm 进 Cache Storage（与模型下载并行，失败静默——只影响首次提速；
+ *  进度经 wasmPhase/wasmPct 并入总进度条，避免“模型 100% 干等”） */
+function prefetchOrtWasm(): void {
+  if (import.meta.env.MODE === 'test') return;
+  if (wasmPrefetchPromise) return;
+  wasmPrefetchPromise = (async () => {
+    try {
+      // 无 SIMD 的设备 ort 必然失败，预取无意义（也不会被使用）
+      if (typeof WebAssembly === 'undefined' || !WebAssembly.validate(SIMD_PROBE)) {
+        wasmPhase = 'skip';
+        emitTotalProgress();
+        return;
+      }
+      const url = vendorUrl(`${PIPER_VOICE.ortPath}/${ORT_WASM_FILE}`);
+      const cache = await openModelCache();
+      if (cache && (await cache.match(cacheRequest(wasmCacheKey())))) {
+        wasmPhase = 'done';
+        wasmPct = 100;
+        emitTotalProgress();
+        console.info(`[piper] ort wasm 已缓存，跳过预取（${ORT_WASM_FILE}）`);
+        return;
+      }
+      console.info(`[piper] 预取 ort wasm（${ORT_WASM_FILE}）…`);
+      // 与模型下载并行发起；knownBytes 用于进度折算（并入总进度条）
+      const bytes = await fetchWithProgress(url, ORT_WASM_BYTES, 120_000, (pct) => {
+        wasmPct = pct ?? 0;
+        emitTotalProgress();
+      });
+      await storeBytes(wasmCacheKey(), bytes);
+      wasmPhase = 'done';
+      wasmPct = 100;
+      emitTotalProgress();
+      console.info(`[piper] ort wasm 预取完成（${(bytes.length / 1048576).toFixed(1)}MB，已入 Cache Storage）`);
+    } catch (e) {
+      wasmPhase = 'skip';
+      emitTotalProgress();
+      console.warn('[piper] ort wasm 预取失败（不影响主流程，将走网络加载）：', (e as Error).message);
+    }
+  })();
+}
+
+/** 读预取缓存中的 wasm 字节（未命中/不可用返回 null → ort 走网络加载） */
+async function getOrtWasmBytes(): Promise<Uint8Array | null> {
+  try {
+    const cache = await openModelCache();
+    if (!cache) return null;
+    const hit = await cache.match(cacheRequest(wasmCacheKey()));
+    if (!hit) return null;
+    const buf = await hit.arrayBuffer();
+    return buf.byteLength > 0 ? new Uint8Array(buf) : null;
+  } catch {
+    return null;
+  }
+}
+
 function loadOrt(): Promise<OrtApi> {
   if (!ortPromise) {
-    ortPromise = import(/* @vite-ignore */ vendorUrl(`${PIPER_VOICE.ortPath}/esm/ort.min.js`)).then(
-      (m) => {
-        const ort = m.default ?? m;
-        // 显式指向 wasm 目录（含非线程 SIMD + 通用回退；GH Pages 无 COOP/COEP，
-        // 不可用线程版，ort 会自动降级到非线程构建）
-        ort.env.wasm.wasmPaths = vendorUrl(`${PIPER_VOICE.ortPath}/`);
-        ort.env.wasm.numThreads = 1;
-        return ort as OrtApi;
-      }
-    );
+    ortPromise = (async () => {
+      // 1.19+ ESM 入口在根目录 ort.min.mjs（1.18 的 esm/ 子目录已不存在）
+      const mod = await import(/* @vite-ignore */ vendorUrl(`${PIPER_VOICE.ortPath}/ort.min.mjs`));
+      const ort = (mod.default ?? mod) as OrtApi;
+      // 显式指向 wasm 目录（1.19+ 仅线程版构建；GH Pages 无 COOP/COEP，
+      // ort 运行时探测线程支持失败后自动降级单线程）
+      ort.env.wasm.wasmPaths = vendorUrl(`${PIPER_VOICE.ortPath}/`);
+      ort.env.wasm.numThreads = 1;
+      // 预取命中则注入字节，ort 不再网络请求 wasm（10MB 首次成本消除）
+      const wasmBytes = await getOrtWasmBytes();
+      if (wasmBytes) ort.env.wasm.wasmBinary = wasmBytes;
+      return ort;
+    })();
   }
   return ortPromise;
 }
@@ -122,7 +217,11 @@ interface WorkerHandle {
 
 let workerFailed = false;
 
-function createWorkerSession(modelBytes: Uint8Array, config: PiperConfig): Promise<WorkerHandle> {
+function createWorkerSession(
+  modelBytes: Uint8Array,
+  config: PiperConfig,
+  wasmBytes: Uint8Array | null
+): Promise<WorkerHandle> {
   return new Promise((resolve, reject) => {
     let worker: Worker;
     try {
@@ -163,15 +262,20 @@ function createWorkerSession(modelBytes: Uint8Array, config: PiperConfig): Promi
     };
     // 复制后 transfer：主线程保留原字节，worker 失败时主线程降级路径可用
     const copy = modelBytes.slice();
+    // wasm 字节同样复制后 transfer（worker 用副本；主线程降级路径仍可注入）
+    const wasmCopy = wasmBytes ? wasmBytes.slice() : null;
+    const transfer: Transferable[] = [copy.buffer];
+    if (wasmCopy) transfer.push(wasmCopy.buffer as ArrayBuffer);
     worker.postMessage(
       {
         type: 'init',
-        ortUrl: vendorUrl(`${PIPER_VOICE.ortPath}/esm/ort.min.js`),
+        ortUrl: vendorUrl(`${PIPER_VOICE.ortPath}/ort.min.mjs`),
         wasmDir: vendorUrl(`${PIPER_VOICE.ortPath}/`),
         modelBytes: copy,
+        wasmBytes: wasmCopy,
         config
       },
-      [copy.buffer]
+      transfer
     );
   });
 }
@@ -189,7 +293,7 @@ export type PiperStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 let piperStatus: PiperStatus = 'idle';
 let lastError: string | null = null;
-const statusListeners = new Set<(s: PiperStatus, progress?: number | null) => void>();
+const statusListeners = new Set<(s: PiperStatus, progress?: number | null, phase?: PiperPhase) => void>();
 
 export function getPiperStatus(): PiperStatus {
   return piperStatus;
@@ -200,17 +304,20 @@ export function getPiperError(): string | null {
   return lastError;
 }
 
-/** 订阅加载状态（progress 仅 loading 阶段推送：0-100 或 null=未知）；返回取消订阅函数 */
-export function onPiperStatus(cb: (s: PiperStatus, progress?: number | null) => void): () => void {
+/** 订阅加载状态（progress 仅 loading 阶段推送：0-100 或 null=未知；
+ *  phase=init 表示资源已就绪、正在创建会话（wasm 编译+模型解析））；返回取消订阅函数 */
+export function onPiperStatus(
+  cb: (s: PiperStatus, progress?: number | null, phase?: PiperPhase) => void
+): () => void {
   statusListeners.add(cb);
   return () => {
     statusListeners.delete(cb);
   };
 }
 
-function setStatus(s: PiperStatus, progress?: number | null) {
+function setStatus(s: PiperStatus, progress?: number | null, phase?: PiperPhase) {
   piperStatus = s;
-  for (const cb of statusListeners) cb(s, progress);
+  for (const cb of statusListeners) cb(s, progress, phase);
 }
 
 let sessionPromise: Promise<LoadedSession | null> | null = null;
@@ -281,9 +388,11 @@ function resolveCandidateUrl(u: string): string {
  * pconline/ipip 国内视角兜底（注意 IPv6 直连会绕过代理）。
  */
 
-/** 会话创建超时：手机上首次初始化含 ort wasm（~10MB）下载/编译 + 模型解析，
- *  放宽到 90s；worker 模式不阻塞主线程，超时后明确降级（不会卡死） */
-const CREATE_TIMEOUT_MS = 90_000;
+/** 会话创建超时：首次初始化含 ort 线程版 wasm（10.7MB）编译 + 模型解析，
+ *   headless 桌面实测 ~103s（手机 CPU 更弱），从 1.18 时代的 90s 放宽到
+ *   120s（wasm 下载已移出 create——预取并行完成；worker 模式不阻塞主线程，
+ *   超时后明确降级，不会卡死） */
+const CREATE_TIMEOUT_MS = 120_000;
 
 /** 简易 tar（UStar）解析：fflate 无 tar 支持，tar 格式简单（512B 头 + 对齐数据） */
 function untar(tar: Uint8Array): { name: string; data: Uint8Array }[] {
@@ -344,6 +453,42 @@ async function fetchTgzFile(
 const MODEL_CACHE_NAME = 'vowel-lab-models-v1';
 const MODEL_CACHE_KEY_PREFIX = 'v2:';
 
+/* ============================================================
+ * 加载总进度（模型 + ort wasm 并行下载，按字节权重折算）
+ * 目的：wasm 预取与模型下载并行，若模型先就绪（本地缓存命中时秒级）
+ * 进度不能“100% 干等”——把 wasm 下载进度并入同一进度条，单调推进；
+ * 预取 settle（完成/失败/跳过）后进入“初始化”阶段（100% + 独立文案）。
+ * 权重：移动端 int8 16.6MB + wasm 11.2MB ≈ 60/40（真实比例）；
+ * 桌面 float 60MB 时 wasm 权重虚高——保守展示（下载快，无感知差异）。
+ * ============================================================ */
+/** loading 细分阶段：download=资源下载（模型/wasm），init=会话创建（编译+解析） */
+export type PiperPhase = 'download' | 'init';
+const MODEL_WEIGHT = 0.6;
+const WASM_WEIGHT = 0.4;
+let modelPct = 0;
+/** wasm 预取状态机：pending=未定（下载中/未开始），done=已就绪，skip=不可用/失败 */
+let wasmPhase: 'pending' | 'done' | 'skip' = 'pending';
+let wasmPct = 0;
+let loadingPhase: PiperPhase = 'download';
+
+/** 按权重折算总进度（纯函数，便于测试）：
+ *  wasm skip（不可用/失败）时权重归零，进度 = 模型进度；
+ *  wasm pending 时按已下载比例折算；done 时按 100% 计。 */
+export function computeTotalProgress(
+  modelPct: number,
+  wasm: { phase: 'pending' | 'done' | 'skip'; pct: number }
+): number {
+  if (wasm.phase === 'skip') return Math.min(100, Math.round(modelPct));
+  const w = wasm.phase === 'done' ? 100 : wasm.pct;
+  return Math.min(100, Math.round(modelPct * MODEL_WEIGHT + w * WASM_WEIGHT));
+}
+
+/** 按权重折算并推送总进度（仅 loading 状态生效） */
+function emitTotalProgress() {
+  if (piperStatus !== 'loading') return;
+  setStatus('loading', computeTotalProgress(modelPct, { phase: wasmPhase, pct: wasmPct }), loadingPhase);
+}
+
 /** Cache Storage 的 key 必须是合法 URL：用假 host + encodeURIComponent 保证唯一合法 */
 function cacheRequest(key: string): Request {
   return new Request(`https://vowel-cache.local/${encodeURIComponent(MODEL_CACHE_KEY_PREFIX + key)}`);
@@ -403,10 +548,13 @@ async function createSession(): Promise<LoadedSession> {
   }
 
   /* 阶段 1：多渠道下载模型字节（候选均为同一模型的不同下载通道；
-   * 任一成功即可，失败试下一通道——与“会话创建”完全解耦） */
+   * 任一成功即可，失败试下一通道——与“会话创建”完全解耦）。
+   * 进度：模型与 wasm 预取（并行）按权重折算成总进度（emitTotalProgress），
+   * 进度条单调推进——模型先就绪时 wasm 进度继续走，不会“100% 干等”。 */
   let modelBytes: Uint8Array | null = null;
   let usedLabel = '';
   let downloadErr: unknown = null;
+  loadingPhase = 'download';
   for (const cand of candidates) {
     try {
       const cacheKey = candidateCacheKey(cand);
@@ -421,27 +569,31 @@ async function createSession(): Promise<LoadedSession> {
         modelBytes = fromCache;
         usedLabel = cand.label;
         console.info(`[piper] 语音模型命中本地缓存（${cand.label}），跳过下载`);
-        // 100% = “已下载，正在初始化”，与“下载中”区分开（手机端可感知）
-        setStatus('loading', 100);
+        modelPct = 100;
+        emitTotalProgress();
       } else {
+        const onModelPct = (pct: number | null) => {
+          modelPct = pct ?? 0;
+          emitTotalProgress();
+        };
         modelBytes = cand.tgz
           ? await fetchTgzFile(
               resolveCandidateUrl(cand.tgz),
               cand.knownBytes!,
               cand.timeoutMs,
               cand.tgzFile!,
-              (pct) => setStatus('loading', pct)
+              onModelPct
             )
           : cand.parts
             ? await fetchParts(
                 cand.parts.map((p) => resolveCandidateUrl(p)),
                 cand.totalBytes!,
                 cand.timeoutMs,
-                (pct) => setStatus('loading', pct)
+                onModelPct
               )
-            : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, (pct) =>
-                setStatus('loading', pct)
-              );
+            : await fetchWithProgress(resolveCandidateUrl(cand.url!), cand.knownBytes!, cand.timeoutMs, onModelPct);
+        modelPct = 100;
+        emitTotalProgress();
         usedLabel = cand.label;
         void storeBytes(cacheKey, modelBytes);
       }
@@ -457,14 +609,29 @@ async function createSession(): Promise<LoadedSession> {
 
   /* 阶段 2：会话创建——只尝试一次（worker → 主线程），失败即整体降级，
    * 绝不再回到渠道循环（曾因此造成“下载 100% → create 失败 → 重新 0%”无尽循环）。
-   * 注：onnxruntime-web 1.18 不支持 wasmBinary 预置（1.19+ API），ort wasm
-   * 走 HTTP 缓存——首次加载含 10MB wasm 下载（手机 ~70s），之后秒开。 */
+   * wasm 预取：与模型下载并行（loadSession 入口 void prefetchOrtWasm）。
+   * 模型可能先就绪（本地缓存命中时秒级），此处等预取收尾（上限 60s，
+   * 预取内部已捕获全部错误不会 reject），命中则经 ort.env.wasm.wasmBinary
+   * 注入，跳过 10MB wasm 网络下载；未命中/超时则 ort 走网络加载
+   * （浏览器对同 URL 在途请求会合并，不会重复下载）。
+   * 注：线程版 wasm 在无 COOP/COEP 环境（GH Pages/Vercel）的可用性
+   * 已用 headless 浏览器实测通过（详见 docs/followup-ort-upgrade.md），
+   * 真机复核见该文档 §5 清单。 */
+  if (wasmPrefetchPromise) {
+    // 等待期间 wasm 进度仍并入总进度条（download 阶段）；settle 后才转 init
+    await Promise.race([wasmPrefetchPromise, new Promise((r) => setTimeout(r, 60_000))]);
+  }
+  const wasmBytes = await getOrtWasmBytes();
+  // 资源已就绪（或放弃等待）：进入初始化阶段——wasm 编译 + 模型解析
+  // 无进度可报，进度定格 100% 并切换独立文案（区分“下载中”，避免假进度观感）
+  loadingPhase = 'init';
+  setStatus('loading', 100, 'init');
   const createTimeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`会话创建超时（${CREATE_TIMEOUT_MS / 1000}s）`)), CREATE_TIMEOUT_MS)
   );
   if (!workerFailed && typeof Worker !== 'undefined') {
     try {
-      const wh = await Promise.race([createWorkerSession(modelBytes, config), createTimeout]);
+      const wh = await Promise.race([createWorkerSession(modelBytes, config, wasmBytes), createTimeout]);
       console.info(`[piper] 语音模型就绪：${PIPER_VOICE.id}（${usedLabel}，${config.audio.sample_rate}Hz，worker 线程）`);
       return { mode: 'worker', worker: wh, config };
     } catch (e) {
@@ -488,6 +655,8 @@ async function createSession(): Promise<LoadedSession> {
 function loadSession(): Promise<LoadedSession | null> {
   if (!sessionPromise) {
     setStatus('loading', null);
+    // wasm 预取与模型下载并行发起（互不依赖；失败静默，仅影响首次提速）
+    void prefetchOrtWasm();
     sessionPromise = (async () => {
       try {
         const loaded = await createSession();
