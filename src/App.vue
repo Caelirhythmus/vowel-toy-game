@@ -75,19 +75,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- 玻璃拟态背景装饰层：fixed 彩色光斑 + 漂浮粒子，为 backdrop-filter 提供"可糊之物"（见 styles/main.css） -->
-  <div class="bg-decor" aria-hidden="true">
-    <span class="blob blob-1"></span>
-    <span class="blob blob-2"></span>
-    <span class="blob blob-3"></span>
-    <span class="blob blob-4"></span>
-    <span class="blob blob-5"></span>
-    <span class="blob blob-6"></span>
-    <span class="particle particle-1"></span>
-    <span class="particle particle-2"></span>
-    <span class="particle particle-3"></span>
-  </div>
-
   <div class="container">
     <header>
       <div class="header-row">
