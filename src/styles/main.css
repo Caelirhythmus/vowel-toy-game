@@ -89,13 +89,16 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
-  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
-  --tier-typical-bg: #dbeafc;
-  --tier-typical-ink: #24599f;
-  --tier-occasional-bg: #e7f0fd;
-  --tier-occasional-ink: #3d7edb;
-  --tier-rare-bg: #f0f6fe;
-  --tier-rare-ink: #6f9fd8;
+  /* 频率档位三色阶（sky：实色填充白字，紫→蓝过渡 + 低→高饱和递进。
+     色彩理论：紫色固有亮度低于蓝色，紫→蓝的亮度差天然存在，
+     无需额外设计亮度对比；常见=暗且不显眼（低饱和紫），
+     罕见=亮且最显眼（高饱和蓝），档位越稀越醒目） */
+  --tier-typical-bg: #736aad; /* 低饱和紫（hsl 252,30%,55%） */
+  --tier-typical-ink: #fff;
+  --tier-occasional-bg: #5b72c9; /* 中饱和蓝紫（hsl 232,51%,57%） */
+  --tier-occasional-ink: #fff;
+  --tier-rare-bg: #2e6fc0; /* 高饱和蓝（hsl 213,63%,47%，略压亮度保白字对比） */
+  --tier-rare-ink: #fff;
 
   /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
   --blob-1: rgba(64, 145, 235, 0.46);
