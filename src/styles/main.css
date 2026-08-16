@@ -89,6 +89,14 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
+  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
+  --tier-typical-bg: #dbeafc;
+  --tier-typical-ink: #24599f;
+  --tier-occasional-bg: #e7f0fd;
+  --tier-occasional-ink: #3d7edb;
+  --tier-rare-bg: #f0f6fe;
+  --tier-rare-ink: #6f9fd8;
+
   /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
   --blob-1: rgba(64, 145, 235, 0.46);
   --blob-2: rgba(56, 189, 215, 0.38);
@@ -166,6 +174,14 @@
   --disabled-bg: #f2ebe2;
   --disabled-border: #b8a898;
 
+  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
+  --tier-typical-bg: #fdeeda;
+  --tier-typical-ink: #b05c1d;
+  --tier-occasional-bg: #fdf3e5;
+  --tier-occasional-ink: #e0772e;
+  --tier-rare-bg: #fef7ee;
+  --tier-rare-ink: #d89a62;
+
   --blob-1: rgba(236, 150, 88, 0.4);
   --blob-2: rgba(250, 190, 150, 0.44);
   --blob-3: rgba(240, 200, 110, 0.36);
@@ -240,6 +256,14 @@
   --disabled-bg: #e7f1ec;
   --disabled-border: #a8bcb2;
 
+  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
+  --tier-typical-bg: #d5efe4;
+  --tier-typical-ink: #0e7d5a;
+  --tier-occasional-bg: #e4f5ee;
+  --tier-occasional-ink: #12a075;
+  --tier-rare-bg: #f0faf5;
+  --tier-rare-ink: #55b693;
+
   --blob-1: rgba(60, 200, 150, 0.38);
   --blob-2: rgba(70, 190, 180, 0.34);
   --blob-3: rgba(140, 210, 120, 0.34);
@@ -313,6 +337,14 @@
   --line-strong: #c2b0e6;
   --disabled-bg: #eee9f6;
   --disabled-border: #b3a8c9;
+
+  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
+  --tier-typical-bg: #e8e0fa;
+  --tier-typical-ink: #5d3fb5;
+  --tier-occasional-bg: #f0eafd;
+  --tier-occasional-ink: #7c5cd6;
+  --tier-rare-bg: #f7f3fe;
+  --tier-rare-ink: #a18ae0;
 
   --blob-1: rgba(160, 130, 225, 0.4);
   --blob-2: rgba(200, 150, 220, 0.34);
@@ -1289,7 +1321,8 @@ select:disabled {
   font-weight: 600;
 }
 
-/* 频率档位徽章（柔和化：浅底深字 pill，与主题同族不扎眼） */
+/* 频率档位徽章（主色系三阶递进：典型=深 / 偶见=主色 / 罕见=浅，
+   浅底深字 pill——与主题同族不撞色，档位层级一目了然） */
 .tier-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -1300,18 +1333,18 @@ select:disabled {
 }
 
 .tier-typical {
-  background: var(--success-line);
-  color: var(--success-strong);
+  background: var(--tier-typical-bg);
+  color: var(--tier-typical-ink);
 }
 
 .tier-occasional {
-  background: var(--warn-line);
-  color: var(--warn-strong);
+  background: var(--tier-occasional-bg);
+  color: var(--tier-occasional-ink);
 }
 
 .tier-rare {
-  background: var(--danger-line);
-  color: var(--danger-strong);
+  background: var(--tier-rare-bg);
+  color: var(--tier-rare-ink);
 }
 
 .example-card {
