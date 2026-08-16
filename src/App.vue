@@ -83,9 +83,6 @@ onUnmounted(() => {
     <span class="blob blob-4"></span>
     <span class="blob blob-5"></span>
     <span class="blob blob-6"></span>
-    <span class="particle particle-1"></span>
-    <span class="particle particle-2"></span>
-    <span class="particle particle-3"></span>
   </div>
 
   <div class="container">

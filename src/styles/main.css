@@ -113,10 +113,6 @@
   --blob-5: rgba(255, 170, 120, 0.22);
   --blob-6: rgba(180, 140, 235, 0.26);
 
-  /* 漂浮粒子（小柔光点） */
-  --particle-1: rgba(127, 179, 238, 0.5);
-  --particle-2: rgba(95, 208, 216, 0.45);
-  --particle-3: rgba(184, 166, 236, 0.45);
 
   /* 元音图（SVG） */
   --chart-bg: #f6fafe;
@@ -192,9 +188,6 @@
   --blob-5: rgba(120, 170, 230, 0.22);
   --blob-6: rgba(220, 160, 190, 0.28);
 
-  --particle-1: rgba(245, 176, 126, 0.5);
-  --particle-2: rgba(247, 207, 154, 0.45);
-  --particle-3: rgba(232, 169, 184, 0.45);
 
   --chart-bg: #fffaf4;
   --chart-line: #f0e0cf;
@@ -269,9 +262,6 @@
   --blob-5: rgba(240, 200, 100, 0.24);
   --blob-6: rgba(160, 140, 220, 0.26);
 
-  --particle-1: rgba(124, 214, 168, 0.5);
-  --particle-2: rgba(134, 216, 196, 0.45);
-  --particle-3: rgba(169, 212, 122, 0.45);
 
   --chart-bg: #f4fbf8;
   --chart-line: #d5ecdf;
@@ -346,9 +336,6 @@
   --blob-5: rgba(250, 200, 130, 0.22);
   --blob-6: rgba(120, 200, 190, 0.24);
 
-  --particle-1: rgba(183, 161, 230, 0.5);
-  --particle-2: rgba(214, 168, 207, 0.45);
-  --particle-3: rgba(169, 196, 236, 0.45);
 
   --chart-bg: #faf8ff;
   --chart-line: #e2d8f3;
@@ -450,54 +437,6 @@
   }
 }
 
-/* ---------- 漂浮粒子：小柔光点，缓慢升降，为背景加层次 ---------- */
-.bg-decor .particle {
-  position: absolute;
-  border-radius: 50%;
-  /* 柔边内建渐变，动画只动 transform（与光斑同策略） */
-  background: radial-gradient(circle, var(--particle-color) 0%, transparent 72%);
-  will-change: transform;
-  animation: particle-float 24s ease-in-out infinite alternate;
-}
-
-.particle-1 {
-  --particle-color: var(--particle-1);
-  width: 15vmin;
-  height: 15vmin;
-  top: 16%;
-  left: 8%;
-  animation-duration: 22s;
-  animation-delay: -4s;
-}
-
-.particle-2 {
-  --particle-color: var(--particle-2);
-  width: 10vmin;
-  height: 10vmin;
-  top: 62%;
-  right: 7%;
-  animation-duration: 26s;
-  animation-delay: -13s;
-}
-
-.particle-3 {
-  --particle-color: var(--particle-3);
-  width: 19vmin;
-  height: 19vmin;
-  bottom: 16%;
-  left: 32%;
-  animation-duration: 30s;
-  animation-delay: -20s;
-}
-
-@keyframes particle-float {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(2.5vmin, -5vmin, 0);
-  }
-}
 
 * {
   box-sizing: border-box;
@@ -1974,8 +1913,7 @@ select:disabled {
     --glass-blur-xs: 4px;
   }
 
-  .bg-decor .blob,
-  .bg-decor .particle {
+  .bg-decor .blob {
     animation: none;
   }
 }
