@@ -1511,25 +1511,105 @@ select:disabled {
   border-radius: 0 0 20px 20px;
 }
 
-/* 折叠开关条（速查表 / 手机端元音图）：与 details summary 同视觉语言 */
+/* ---------- 可展开卡片头部（速查表 / 手机端元音图） ----------
+   现代 accordion：整行卡片按钮 + hover 反馈 + 展开态着色 +
+   旋转箭头 + 「展开/收起」状态徽章，可点击性一目了然 */
 .info-toggle {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   width: 100%;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  margin-bottom: 10px;
+  background: var(--glass-bg-card);
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
   cursor: pointer;
   color: var(--accent-strong);
-  font-size: 1.15rem;
+  font-size: 1.02rem;
   font-weight: 700;
   text-align: left;
+  box-shadow: 0 1px 4px rgba(30, 60, 90, 0.05);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* 手机端元音图折叠条：卡片式 */
+.info-toggle:hover {
+  background: var(--accent-soft);
+  border-color: var(--line-strong);
+  box-shadow: 0 3px 10px rgba(30, 60, 90, 0.1);
+}
+
+/* 展开态：着色强调，与内容区连成一体 */
+.info-toggle[aria-expanded='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.info-toggle-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.info-toggle-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.info-toggle-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 状态徽章：折叠时「展开」、展开时「收起」 */
+.info-toggle-hint {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: rgba(127, 127, 127, 0.12);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.info-toggle[aria-expanded='true'] .info-toggle-hint {
+  color: var(--accent-strong);
+  background: var(--accent-soft-2);
+}
+
+/* 箭头：折叠朝下（暗示可展开），展开旋转 180° */
+.info-toggle-chevron {
+  font-size: 0.8rem;
+  color: var(--accent);
+  transition: transform 0.25s ease;
+}
+
+.info-toggle[aria-expanded='true'] .info-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+/* 展开/收起动画：grid-template-rows 0fr→1fr（现代浏览器平滑过渡） */
+.info-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease, margin-bottom 0.3s ease;
+  margin-bottom: 0;
+}
+
+.info-body.open {
+  grid-template-rows: 1fr;
+  margin-bottom: 14px;
+}
+
+.info-body-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 手机端元音图折叠条：卡片式（继承 info-toggle 卡片头，侧栏 gap 布局无需外边距） */
 .game-side .chart-toggle {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border-soft);
@@ -1537,6 +1617,7 @@ select:disabled {
   padding: 10px 14px;
   font-size: 0.95rem;
   box-shadow: none;
+  margin-bottom: 0;
 }
 
 .info details {

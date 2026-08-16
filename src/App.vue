@@ -125,14 +125,24 @@ onUnmounted(() => {
     </section>
 
     <section class="info">
-      <ModelNotes />
+      <!-- 演变类型速查：现代可展开卡片（置于模型说明前） -->
       <button class="info-toggle" :aria-expanded="sheetOpen" @click="sheetOpen = !sheetOpen">
-        <span>{{ t('info.types') }}</span>
-        <span aria-hidden="true">{{ sheetOpen ? '▴' : '▾' }}</span>
+        <span class="info-toggle-title">
+          <span class="info-toggle-icon" aria-hidden="true">📋</span>
+          {{ t('info.types') }}
+        </span>
+        <span class="info-toggle-right">
+          <span class="info-toggle-hint">{{ sheetOpen ? t('info.collapse') : t('info.expand') }}</span>
+          <span class="info-toggle-chevron" aria-hidden="true">▾</span>
+        </span>
       </button>
-      <div v-show="sheetOpen">
-        <CheatSheet />
+      <div class="info-body" :class="{ open: sheetOpen }">
+        <div class="info-body-inner">
+          <CheatSheet />
+        </div>
       </div>
+
+      <ModelNotes />
       <details>
         <summary>{{ t('refs.title') }}</summary>
         <ul class="refs">
