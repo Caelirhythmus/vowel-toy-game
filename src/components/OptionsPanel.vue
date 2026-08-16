@@ -69,9 +69,9 @@ function speakWord(word: Word) {
           </button>
         </div>
       </div>
-      <div class="sys-footer">
+      <div class="sys-footer" v-if="phase === 'playing'">
         <span class="sys-count">{{ t('sys.selected', { n: selection.size }) }}</span>
-        <button class="btn start" :disabled="disabled(phase) || selection.size === 0" @click="emit('submit')">{{ t('btn.submit') }}</button>
+        <button class="btn start" :disabled="selection.size === 0" @click="emit('submit')">{{ t('btn.submit') }}</button>
       </div>
     </template>
   </div>

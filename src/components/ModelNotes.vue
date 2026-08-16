@@ -5,7 +5,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <details open>
+  <details>
     <summary>{{ t('info.model') }}</summary>
     <ul>
       <li>{{ t('info.model.l1') }}</li>
