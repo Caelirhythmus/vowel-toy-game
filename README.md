@@ -108,6 +108,7 @@ npm run preview      # 本地预览构建产物
 - [`docs/phonetics-misconceptions-and-refactor.md`](docs/phonetics-misconceptions-and-refactor.md) —— 语音学事实误区研究
 - [`docs/followup-analysis.md`](docs/followup-analysis.md) —— 后续跟进全量分析（路线图）
 - [`docs/family-mode-data-checklist.md`](docs/family-mode-data-checklist.md) —— 语系上下文玩法资料搜集清单
+- [`docs/family-mode-data.md`](docs/family-mode-data.md) —— 语系上下文玩法搜集结果（档位矩阵 + 语料 + 出处 + 完备性报告）
 
 ## 部署
 
