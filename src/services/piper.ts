@@ -191,34 +191,44 @@ function resolveCandidateUrl(u: string): string {
   return /^https?:/i.test(u) ? u : vendorUrl(u);
 }
 
-/** 国内 IP 检测：并行请求多个可达的 IP 归属源（任一判定国内即通过）。
- *  - pconline（GBK 编码，pro 省份字段非空即国内）
- *  - myip.ipip.net（文本含“中国”）
- *  - ipinfo.io（country=="CN"）
- *  3s 超时；全部失败时按浏览器语言兜底（zh → 国内）。
- *  结果模块级缓存（一次会话只检测一次）。 */
+/** 国内 IP 检测。
+ *  国际视角优先：ipinfo.io 经代理能看到真实出口 IP（实测：挂代理返回 JP；
+ *  国内直连返回 CN）。注意 myip.ipip.net 会走 IPv6 直连绕过代理（实测挂代理
+ *  仍返回中国 IP），因此只能作为 ipinfo 失败时的国内视角兜底，不能参与“任一
+ *  命中即国内”的裁决。3s 超时；全部失败按浏览器语言兜底。结果模块级缓存。 */
 let chinaRegion: boolean | null = null;
 
-const CN_APIS: { url: string; encoding?: string }[] = [
-  { url: 'https://whois.pconline.com.cn/ipJson.jsp?json=true', encoding: 'gbk' },
-  { url: 'https://myip.ipip.net' },
-  { url: 'https://ipinfo.io/json' }
-];
+const CN_APIS = {
+  /** 国际视角（最可信）：country == "CN" 即国内 */
+  intl: 'https://ipinfo.io/json',
+  /** 国内视角兜底：文本含“中国/省”即国内（可能被 IPv6 直连绕过代理） */
+  domestic: [
+    { url: 'https://whois.pconline.com.cn/ipJson.jsp?json=true', encoding: 'gbk' },
+    { url: 'https://myip.ipip.net', encoding: 'utf-8' }
+  ] as { url: string; encoding: string }[]
+} as const;
 
 async function isChinaIp(): Promise<boolean> {
   if (chinaRegion !== null) return chinaRegion;
   try {
-    const results = await Promise.allSettled(
-      CN_APIS.map(({ url, encoding }) =>
-        fetch(url, { signal: AbortSignal.timeout(3000) })
-          .then((r) => (r.ok ? r.arrayBuffer() : null))
-          .then((buf) => (buf ? new TextDecoder(encoding ?? 'utf-8').decode(buf) : ''))
-      )
-    );
-    // “省”只在中文省份地址出现；country "CN" 是 ipinfo 的国家代码
-    chinaRegion = results.some(
-      (r) => r.status === 'fulfilled' && /中国|"country"\s*:\s*"CN"|\u7701/.test(r.value)
-    );
+    const intl = await fetch(CN_APIS.intl, { signal: AbortSignal.timeout(3000) })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    if (intl && typeof intl.country === 'string') {
+      chinaRegion = intl.country === 'CN';
+    } else {
+      // ipinfo 不可用 → 国内视角兜底
+      const results = await Promise.allSettled(
+        CN_APIS.domestic.map(({ url, encoding }) =>
+          fetch(url, { signal: AbortSignal.timeout(3000) })
+            .then((r) => (r.ok ? r.arrayBuffer() : null))
+            .then((buf) => (buf ? new TextDecoder(encoding ?? 'utf-8').decode(buf) : ''))
+        )
+      );
+      chinaRegion = results.some(
+        (r) => r.status === 'fulfilled' && /中国|\u7701/.test(r.value)
+      );
+    }
   } catch {
     // 检测失败：按浏览器语言兜底（本项目用户以中文为主）
     chinaRegion = /^zh/i.test(navigator.language);

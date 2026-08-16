@@ -98,23 +98,20 @@ function jsdelivrParts(host: string): string[] {
 }
 
 /**
- * Gitee 镜像（国内加速渠道，chinaOnly）：
- * 在 gitee.com 从 GitHub 导入本仓库（含已提交的分片文件）；
- * 国内 IP 首选（raw 直连快），国外 IP 跳过（访问 Gitee 反而慢）。
- * 仓库名/分支与下方常量一致即直接生效；若不同改这几行即可。
+ * 国内加速渠道说明（2026-08 实测）：
+ * - Gitee raw 不可用：①大文件（>10MB）匿名访问返回 403
+ *   "large file require login for access."；②raw.giteeusercontent.com
+ *   响应无 Access-Control-Allow-Origin，浏览器跨域 fetch 必被拦截。
+ * - 可行方案（需账号，接入时在此加候选）：
+ *   a) npm 包 + npmmirror：tgz 需浏览器端解压（fflate）
+ *   b) 腾讯云 COS / 阿里云 OSS：BGP 直链 + CORS
  */
-const GITEE_OWNER = 'celestial-rhythm';
-const GITEE_REPO = 'vowel-toy-game';
-const GITEE_BRANCH = 'main';
-function giteeUrl(relPath: string): string {
-  return `https://gitee.com/${GITEE_OWNER}/${GITEE_REPO}/raw/${GITEE_BRANCH}/public/${relPath}`;
-}
 
 export const PIPER_VOICE = {
   id: 'en_US-joe-medium',
   /**
    * 音质优先架构 + IP 自适应：
-   * - 国内 IP：Gitee 镜像（国内直连快）→ jsDelivr → 本地
+   * - 国内 IP：jsDelivr（暂缺国内专用渠道，Gitee 已实测不可用）→ 本地
    * - 国外 IP/代理：跳过 Gitee，jsDelivr → 本地
    * - 移动：int8 小模型为主（float 60MB 在手机端下载慢、会话创建易超时）
    * - 全失败 → 降级 espeak/TTS
@@ -123,15 +120,9 @@ export const PIPER_VOICE = {
   /** 已知字节数：用于下载进度（content-length 可能因服务器压缩/分块缺失而失真） */
   modelBytes: 16599901,
   modelBytesFloat: 63201294,
-  /** 桌面候选：Gitee（仅国内）→ jsDelivr cdn → gcore → 本地分片 → int8 本地 */
+  /** 桌面候选：jsDelivr cdn → gcore → 本地分片 → int8 本地
+   *  （Gitee 镜像因大文件登录限制 + 无 CORS 已移除；接入国内渠道时加回） */
   modelCandidatesDesktop: [
-    {
-      label: 'float Gitee 镜像',
-      timeoutMs: 90_000,
-      chinaOnly: true,
-      parts: FLOAT_PARTS_LOCAL.map((p) => giteeUrl(p)),
-      totalBytes: 63201294
-    },
     {
       label: 'float jsDelivr CDN',
       timeoutMs: 90_000,
@@ -152,15 +143,8 @@ export const PIPER_VOICE = {
     },
     { label: 'int8 本地', timeoutMs: 60_000, url: 'vendor/piper/en_US-joe-medium.int8.onnx', knownBytes: 16599901 }
   ] as ModelCandidate[],
-  /** 移动候选：int8 Gitee（仅国内）→ jsDelivr → 本地 */
+  /** 移动候选：int8 jsDelivr → 本地（Gitee 已移除，原因同上） */
   modelCandidatesMobile: [
-    {
-      label: 'int8 Gitee 镜像',
-      timeoutMs: 60_000,
-      chinaOnly: true,
-      url: giteeUrl('vendor/piper/en_US-joe-medium.int8.onnx'),
-      knownBytes: 16599901
-    },
     {
       label: 'int8 jsDelivr',
       timeoutMs: 60_000,
