@@ -89,20 +89,21 @@
   --disabled-bg: #e9eff7;
   --disabled-border: #aab6c6;
 
-  /* 频率档位三色阶（sky 默认配色「光谱」：紫→蓝→青冷色渐变。
-     显眼度单调递增：典型 < 偶见 < 罕见——填充越亮越显眼、
-     饱和度越高越显眼：典型=紫（低饱和）、偶见=蓝（中饱和）、
-     罕见=青（高饱和亮色）；白字对比 ~3.6-4.3:1，美观优先） */
-  --tier-typical-bg: #9d7fd8; /* 紫（hsl 258,50%,67%） */
+  /* ---- 频率徽章：主题色相基准 + 默认配色「光谱」 ----
+     机械推导：三档 = 主题基准色相 + 固定偏移（典型 +46°、
+     偶见 +3°、罕见 -24°），饱和度/亮度固定——任意主题下
+     徽章与主题同族协调，档位间相对关系跨主题完全一致
+     （配色相对配色的偏移 = 主题相对主题的偏移） */
+  --tier-hue: 214deg; /* 默认基准 = sky 主题色相（accent #3d7edb） */
+  --tier-typical-bg: hsl(calc(var(--tier-hue) + 46deg) 53% 67%);
   --tier-typical-ink: #fff;
-  --tier-occasional-bg: #5b8de0; /* 蓝（hsl 219,69%,62%） */
+  --tier-typical-deep: hsl(calc(var(--tier-hue) + 41deg) 43% 52%);
+  --tier-occasional-bg: hsl(calc(var(--tier-hue) + 3deg) 68% 62%);
   --tier-occasional-ink: #fff;
-  --tier-rare-bg: #17a8c4; /* 青（hsl 189,79%,43%） */
+  --tier-occasional-deep: hsl(calc(var(--tier-hue) + 10deg) 41% 50%);
+  --tier-rare-bg: hsl(calc(var(--tier-hue) - 24deg) 59% 43%);
   --tier-rare-ink: #fff;
-  /* 三档深色文字版（玻璃形态用，同色相低亮度保证对比） */
-  --tier-typical-deep: #6a4fb8;
-  --tier-occasional-deep: #3a63b8;
-  --tier-rare-deep: #0d7d94;
+  --tier-rare-deep: hsl(calc(var(--tier-hue) - 24deg) 39% 32%);
 
   /* 光斑（背景装饰层：主色 4 + 点缀 2，冷暖互补避免单调） */
   --blob-1: rgba(64, 145, 235, 0.46);
@@ -181,13 +182,8 @@
   --disabled-bg: #f2ebe2;
   --disabled-border: #b8a898;
 
-  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
-  --tier-typical-bg: #fdeeda;
-  --tier-typical-ink: #b05c1d;
-  --tier-occasional-bg: #fdf3e5;
-  --tier-occasional-ink: #e0772e;
-  --tier-rare-bg: #fef7ee;
-  --tier-rare-ink: #d89a62;
+  /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
+  --tier-hue: 25deg;
 
   --blob-1: rgba(236, 150, 88, 0.4);
   --blob-2: rgba(250, 190, 150, 0.44);
@@ -263,13 +259,8 @@
   --disabled-bg: #e7f1ec;
   --disabled-border: #a8bcb2;
 
-  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
-  --tier-typical-bg: #d5efe4;
-  --tier-typical-ink: #0e7d5a;
-  --tier-occasional-bg: #e4f5ee;
-  --tier-occasional-ink: #12a075;
-  --tier-rare-bg: #f0faf5;
-  --tier-rare-ink: #55b693;
+  /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
+  --tier-hue: 162deg;
 
   --blob-1: rgba(60, 200, 150, 0.38);
   --blob-2: rgba(70, 190, 180, 0.34);
@@ -345,13 +336,8 @@
   --disabled-bg: #eee9f6;
   --disabled-border: #b3a8c9;
 
-  /* 频率档位三色阶（从主色系衍生：典型=深档 / 偶见=主色 / 罕见=浅档） */
-  --tier-typical-bg: #e8e0fa;
-  --tier-typical-ink: #5d3fb5;
-  --tier-occasional-bg: #f0eafd;
-  --tier-occasional-ink: #7c5cd6;
-  --tier-rare-bg: #f7f3fe;
-  --tier-rare-ink: #a18ae0;
+  /* 频率徽章基准色相（= 本主题 accent 色相，配色方案按此机械推导） */
+  --tier-hue: 256deg;
 
   --blob-1: rgba(160, 130, 225, 0.4);
   --blob-2: rgba(200, 150, 220, 0.34);
@@ -1429,53 +1415,51 @@ select:disabled {
 }
 
 /* ============================================================
- * 频率徽章形态 × 配色方案（sky 主题，header 双按钮切换）
- * 形态：user（上方默认实色规则）/ glass / outline
- * 配色：--tier-* 变量组（默认紫蓝；其余见下方
- * [data-tier-color='xxx'] 覆盖块，含 -deep 深字版）
- * 全部限定 [data-theme='sky']：切到其他主题自动回各自默认
+ * 频率徽章形态 × 配色方案（全局，速查表工具栏双按钮切换）
+ * 形态：实色（上方默认规则）/ glass（下方覆盖）
+ * 配色：--tier-* 变量组——默认「光谱」定义在 :root（各主题
+ * 以 --tier-hue 基准色相机械推导），「自然」见下方覆盖块
  * ============================================================ */
 
 /* 方案「glass」玻璃：半透明彩色玻璃底（color-mix 取配色主色
    18% 透明）+ 模糊 + 同色系深字，与全站玻璃拟态语言统一 */
-[data-theme='sky'][data-tier-style='glass'] .tier-badge {
+[data-tier-style='glass'] .tier-badge {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-[data-theme='sky'][data-tier-style='glass'] .tier-typical {
+[data-tier-style='glass'] .tier-typical {
   background: color-mix(in srgb, var(--tier-typical-bg) 18%, transparent);
   color: var(--tier-typical-deep);
 }
 
-[data-theme='sky'][data-tier-style='glass'] .tier-occasional {
+[data-tier-style='glass'] .tier-occasional {
   background: color-mix(in srgb, var(--tier-occasional-bg) 18%, transparent);
   color: var(--tier-occasional-deep);
 }
 
-[data-theme='sky'][data-tier-style='glass'] .tier-rare {
+[data-tier-style='glass'] .tier-rare {
   background: color-mix(in srgb, var(--tier-rare-bg) 20%, transparent);
   color: var(--tier-rare-deep);
 }
 
 /* ============================================================
- * 频率徽章配色方案（sky 专属覆盖 --tier-* 变量）
- * 默认「光谱」定义在 :root（sky 主题块），无需覆盖
+ * 配色方案「自然」（全局覆盖 --tier-* 变量）
+ * 机械推导：三档 = 主题基准色相 + 固定偏移（典型 -64°、
+ * 偶见 -13°、罕见 -1°），与光谱共用同一 --tier-hue 机制
  * ============================================================ */
-
-/* 自然：绿→青→蓝，清新自然 */
-[data-theme='sky'][data-tier-color='nature'] {
-  --tier-typical-bg: #5fbf8f;
+[data-tier-color='nature'] {
+  --tier-typical-bg: hsl(calc(var(--tier-hue) - 64deg) 42% 56%);
   --tier-typical-ink: #fff;
-  --tier-typical-deep: #2e8f63;
-  --tier-occasional-bg: #3f9fd1;
+  --tier-typical-deep: hsl(calc(var(--tier-hue) - 61deg) 30% 37%);
+  --tier-occasional-bg: hsl(calc(var(--tier-hue) - 13deg) 61% 53%);
   --tier-occasional-ink: #fff;
-  --tier-occasional-deep: #2272a8;
-  --tier-rare-bg: #2f6fc0;
+  --tier-occasional-deep: hsl(calc(var(--tier-hue) - 10deg) 44% 40%);
+  --tier-rare-bg: hsl(calc(var(--tier-hue) - 1deg) 54% 47%);
   --tier-rare-ink: #fff;
-  --tier-rare-deep: #1c4e92;
+  --tier-rare-deep: hsl(calc(var(--tier-hue) + 1deg) 35% 34%);
 }
 
 .example-card {
