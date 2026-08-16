@@ -271,6 +271,8 @@ async function fetchTgzFile(
   onProgress: ((pct: number | null) => void) | null
 ): Promise<Uint8Array> {
   const tgz = await fetchWithProgress(url, knownBytes, timeoutMs, onProgress);
+  // tgz 为压缩后大小，可能小于 knownBytes（模型字节）——下载完成即视为 100%
+  onProgress?.(100);
   const tar = gunzipSync(tgz);
   const files = untar(tar);
   const entry = files.find((f) => f.name === fileInPackage);
