@@ -47,13 +47,16 @@ export const ESPEAK_MNEMONICS: Record<string, string> = {
   ə: '@'
 };
 
-/** 复元音 → espeak 助记符序列（实证：aI→aɪ、aU→aʊ、eI→eɪ、@U→əʊ；oU→oʊ 美式 goat） */
+/** 复元音 → espeak 助记符序列（实证：aI→aɪ、aU→aʊ、eI→eɪ、@U→əʊ；oU→oʊ 美式 goat；
+ *  jE→jɛ、wO→wɔ 意大利语上升复元音，espeak en-us 半元音 j/w + 开中元音 E/O） */
 export const DIPHTHONG_MNEMONICS: Record<string, string> = {
   aɪ: 'aI',
   aʊ: 'aU',
   eɪ: 'eI',
   əʊ: '@U',
-  oʊ: 'oU'
+  oʊ: 'oU',
+  jɛ: 'jE',
+  wɔ: 'wO'
 };
 
 /** 辅音 → espeak 助记符（与音素输入同形） */
@@ -195,7 +198,9 @@ export const PIPER_VOWEL_TOKENS: Record<string, string[]> = {
   aʊ: ['a', 'ʊ'],
   eɪ: ['e', 'ɪ'],
   əʊ: ['o', 'ʊ'],
-  oʊ: ['o', 'ʊ']
+  oʊ: ['o', 'ʊ'],
+  jɛ: ['j', 'ɛ'],
+  wɔ: ['w', 'ɔ']
 };
 
 /** 辅音 → Piper 音素名（注意 g 用 ɡ，joe 音素表无 ASCII g） */

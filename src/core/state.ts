@@ -13,7 +13,8 @@ import { genQuestion } from './questions';
 export const DEFAULT_SETTINGS: GameSettings = {
   mode: 'mixed',
   difficulty: 'easy',
-  timeSec: 60
+  timeSec: 60,
+  family: 'generic'
 };
 
 export function createGame(settings: Partial<GameSettings> = {}): GameState {
@@ -47,7 +48,7 @@ export function start(s: GameState, now: number): boolean {
   s.stats = { correct: 0, incorrect: 0, total: 0, streak: 0, bestStreak: 0 };
   s.mistakes = [];
   s.lastResult = null;
-  const q = genQuestion(s.settings.mode, s.settings.difficulty);
+  const q = genQuestion(s.settings.mode, s.settings.difficulty, s.settings.family);
   if (!q) return false;
   s.question = q;
   s.timer.deadline = isTimed(s) ? now + s.settings.timeSec * 1000 : 0;
@@ -105,7 +106,7 @@ export function answerSystem(s: GameState, selected: number[], now: number): { o
 /** 答对后进入下一题 */
 export function next(s: GameState, _now: number): boolean {
   if (s.phase !== 'answered') return false;
-  const q = genQuestion(s.settings.mode, s.settings.difficulty);
+  const q = genQuestion(s.settings.mode, s.settings.difficulty, s.settings.family);
   if (!q) return false;
   s.question = q;
   s.lastResult = null;

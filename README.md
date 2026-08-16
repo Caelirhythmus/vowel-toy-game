@@ -29,6 +29,7 @@
   - 第三方许可见 `THIRD_PARTY_NOTICES.md`；`npm run vendor` 预置全部离线资源（espeak-ng / onnxruntime-web / piper 模型）
 - **自托管 IPA 字体**（Charis SIL 子集 woff2，SIL OFL 许可）：消除跨平台 ɛ/æ/ø/ə 渲染差异
 - **中英双语**（右上角切换，localStorage 记忆）、限时/不限时、入门/进阶难度、错题回顾、历史统计
+- **语系模式**（设置中切换）：英语史 / 汉语史（官话）/ 罗曼史 / 斯拉夫史——频率档按该语系历史音韵学设定（如罗曼史"无条件低化=典型"、英语史弱化=典型、汉语史高元音复化=典型），词表用该语系音系子集，答对展示该语系真实演变语料（GVS、аканье、意大利语 pedem→piede 等）；证据不足的组合不出题；依据与出处见 [`docs/family-mode-data.md`](docs/family-mode-data.md)
 - **可访问性**：`aria-live` 反馈、键盘操作（元音点可 Tab 聚焦 + Enter/Space 发音）、Esc 关闭弹窗、焦点管理、`prefers-reduced-motion`
 
 ## 架构（可配置化 · 去耦合化 · 框架化）

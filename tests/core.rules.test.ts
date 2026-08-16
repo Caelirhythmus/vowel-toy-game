@@ -90,6 +90,20 @@ describe('规则应用（构造用例）', () => {
     expect(applyRule(r, W(V('u'), V('a'), 0), 0)?.v[0]).toEqual({ s: 'oʊ', long: false, diph: true });
     expect(ruleCanApply(r, W(V('u', true), V('a'), 0), 0)).toBe(false);
   });
+
+  it('意大利语复化（rom-diph）：重读位 ɛ→jɛ、ɔ→wɔ；非重读不适用', () => {
+    const r = rId('rom-diph');
+    expect(applyRule(r, W(V('ɛ'), V('a'), 0), 0)?.v[0]).toEqual({ s: 'jɛ', long: false, diph: true });
+    expect(applyRule(r, W(V('ɔ'), V('a'), 0), 0)?.v[0].s).toBe('wɔ');
+    expect(ruleCanApply(r, W(V('ɛ'), V('a'), 1), 0)).toBe(false); // 非重读
+    expect(ruleCanApply(r, W(V('ɛ', true), V('a'), 0), 0)).toBe(false); // 长元音
+  });
+
+  it('单元音化：jɛ→ɛ、wɔ→ɔ（意大利语移动双元音去半元音）', () => {
+    const r = rId('mono');
+    expect(applyRule(r, W(V('jɛ', false, true), V('a'), 0), 0)?.v[0].s).toBe('ɛ');
+    expect(applyRule(r, W(V('wɔ', false, true), V('a'), 0), 0)?.v[0].s).toBe('ɔ');
+  });
 });
 
 describe('规则变换产物合法性（抽样）', () => {

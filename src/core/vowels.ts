@@ -3,20 +3,21 @@
  * ============================================================ */
 import type { VowelFeatures, WordVowel } from './types';
 import { MONOPHTHONGS, DIPHTHONGS, VOWEL_POOL, LONG_PROB } from '@/config/vowels';
+import type { VowelPoolEntry } from '@/config/vowels';
 
-/** 按权重从元音池构造一个词内元音 */
-export function mkVowel(): WordVowel {
-  const total = VOWEL_POOL.reduce((s, e) => s + e.w, 0);
+/** 按权重从元音池构造一个词内元音（pool 缺省 = 泛语系全池） */
+export function mkVowel(pool: VowelPoolEntry[] = VOWEL_POOL, longProb: number = LONG_PROB): WordVowel {
+  const total = pool.reduce((s, e) => s + e.w, 0);
   let r = Math.random() * total;
-  let entry = VOWEL_POOL[0];
-  for (const e of VOWEL_POOL) {
+  let entry = pool[0];
+  for (const e of pool) {
     r -= e.w;
     if (r <= 0) {
       entry = e;
       break;
     }
   }
-  const long = !entry.diph && Math.random() < LONG_PROB;
+  const long = !entry.diph && Math.random() < longProb;
   return { s: entry.s, long, diph: !!entry.diph };
 }
 

@@ -50,7 +50,7 @@ export type ChangeType =
   | 'monophthongization';
 
 /** 环境条件 */
-export type EnvKind = 'unstressed' | 'long' | 'stressed-next-a' | 'before-i';
+export type EnvKind = 'unstressed' | 'long' | 'stressed-next-a' | 'before-i' | 'stressed-open-syllable';
 
 export interface RuleEnv {
   kind: EnvKind;
@@ -85,11 +85,15 @@ export interface Rule {
    */
   familyNote: LocalizedText;
   /**
-   * 语系上下文频率覆盖（架构预留，暂未启用）：
-   * 未来“语系模式”玩法按 family 覆盖 tier（同一规则在英语史/
-   * 汉语史/罗曼史中的档位可能不同）。启用前需逐条文献审慎定档。
+   * 语系上下文频率覆盖：同一规则在不同语系/语言史中的档位可能不同
+   * （如无条件低化：泛语系 rare，罗曼史 typical——通俗拉丁语长短合并）。
+   * 数据依据见 docs/family-mode-data.md。
    */
   familyTiers?: { family: string; tier: Tier }[];
+  /** 语系排除：该规则在该语系中不出题（无此机制/时间切片外/证据不足） */
+  familyExcluded?: string[];
+  /** 语系真实语料示例（语系模式下优先展示；缺省回退 examples） */
+  familyExamples?: Record<string, RuleExample[]>;
   /** 输入词内元音，返回新元音或 null（不适用） */
   transform: (v: WordVowel) => WordVowel | null;
   examples: RuleExample[];
@@ -142,6 +146,8 @@ export interface GameSettings {
   difficulty: Difficulty;
   /** 0 = 不限时 */
   timeSec: number;
+  /** 语系上下文：'generic' = 泛语系（跨语言平均）；其余见 config/families.ts */
+  family: string;
 }
 
 export interface GameStats {

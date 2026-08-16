@@ -33,8 +33,8 @@ describe('VowelChart', () => {
     const labels = wrapper
       .findAll('text[font-style="italic"]')
       .map((el) => el.attributes('x') + ',' + el.attributes('y'));
-    expect(labels).toHaveLength(5); // aɪ aʊ eɪ əʊ oʊ
-    expect(new Set(labels).size).toBe(5);
+    expect(labels).toHaveLength(7); // aɪ aʊ eɪ əʊ oʊ jɛ wɔ
+    expect(new Set(labels).size).toBe(7);
   });
 
   it('圆唇对并排：i 与 y、e 与 ø 的标签 x 不同', () => {

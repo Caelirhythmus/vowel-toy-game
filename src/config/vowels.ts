@@ -27,7 +27,11 @@ export const DIPHTHONGS: Record<string, DiphthongDef> = {
   eɪ: { symbol: 'eɪ', start: 'e', labelOffset: { dx: 0.06, dy: -0.05 } },
   əʊ: { symbol: 'əʊ', start: 'ə', labelOffset: { dx: -0.05, dy: 0.03 } },
   // 汉语高元音复化 u→ou 的起点是后元音 o（区别于英式 goat 的央起点 əʊ）
-  oʊ: { symbol: 'oʊ', start: 'o', labelOffset: { dx: -0.07, dy: 0.07 } }
+  oʊ: { symbol: 'oʊ', start: 'o', labelOffset: { dx: -0.07, dy: 0.07 } },
+  // 意大利语"上升复元音"（短中元音重读开音节复化：pedem→piede、bŏnum→buono），
+  // 韵核在后；图上按韵核 ɛ/ɔ 定位
+  jɛ: { symbol: 'jɛ', start: 'ɛ', labelOffset: { dx: -0.07, dy: 0.07 } },
+  wɔ: { symbol: 'wɔ', start: 'ɔ', labelOffset: { dx: 0.06, dy: 0.07 } }
 };
 
 /** 词生成元音池（含权重：常见前不圆唇元音权重高） */

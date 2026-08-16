@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { GameState } from '@/core';
 import { changedText, wordText } from '@/core';
 import { TIER_OPTIONS, TYPE_OPTIONS } from '@/config/game';
+import { ruleTierFor } from '@/config/families';
 import { useI18n } from '@/composables/useI18n';
 
 const props = defineProps<{ state: GameState }>();
@@ -17,9 +18,23 @@ const typeName = (id: string) => TYPE_OPTIONS.find((x) => x.id === id)?.[lang.va
 const tierName = (id: string) => TIER_OPTIONS.find((x) => x.id === id)?.[lang.value] ?? id;
 const ruleName = computed(() => (q.value ? q.value.rule.name[lang.value] : ''));
 const ruleDesc = computed(() => (q.value ? q.value.rule.desc[lang.value] : ''));
-const tierId = computed(() => (q.value ? q.value.rule.tier : null));
+/** 频率徽章：语系模式下显示覆盖后的档位（familyTiers），与题目答案一致 */
+const tierId = computed(() => {
+  if (!q.value) return null;
+  return ruleTierFor(q.value.rule, props.state.settings.family);
+});
 /** 语系倾向说明（同类型在不同语系中的频率/触发差异） */
 const familyNote = computed(() => (q.value ? q.value.rule.familyNote[lang.value] : ''));
+/** 示例卡：语系模式下优先展示该语系真实语料，缺省回退泛语系示例 */
+const examples = computed(() => {
+  if (!q.value) return [];
+  const fam = props.state.settings.family;
+  if (fam !== 'generic') {
+    const fe = q.value.rule.familyExamples?.[fam];
+    if (fe?.length) return fe;
+  }
+  return q.value.rule.examples;
+});
 
 const envLabel = computed(() => {
   if (!q.value) return '';
@@ -69,7 +84,7 @@ const systemLines = computed(() => {
         <div class="fb-line"><strong>{{ t('fb.desc') }}：</strong>{{ ruleDesc }}</div>
         <div class="fb-line"><strong>{{ t('fb.family') }}：</strong>{{ familyNote }}</div>
         <div class="fb-line"><strong>{{ t('fb.example') }}：</strong></div>
-        <div v-for="ex in q.rule.examples" :key="ex.text" class="example-card">
+        <div v-for="ex in examples" :key="ex.text" class="example-card">
           <div class="ex-text">{{ ex.text }}</div>
           <div class="ex-src">{{ lang === 'zh' ? ex.srcZh : ex.srcEn }}</div>
         </div>

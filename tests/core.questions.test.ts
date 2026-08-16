@@ -3,6 +3,9 @@ import { genFreqQuestion, genQuestion, genSystemQuestion, genTypeQuestion } from
 import { applicablePositions, ruleCanApply } from '@/core/rules';
 import { wordText } from '@/core/words';
 import { CHANGE_TYPE_IDS, TIER_IDS } from '@/config/game';
+import { FAMILY_IDS, vowelPoolFor } from '@/config/families';
+import { RULES } from '@/config/rules';
+import { ruleExcludedFor, ruleTierFor } from '@/config/families';
 
 describe('词对题生成不变量', () => {
   for (const diff of ['easy', 'hard'] as const) {
@@ -75,5 +78,71 @@ describe('混合题型', () => {
       expect(q).not.toBeNull();
       if (q) expect(['type', 'freq', 'system']).toContain(q.kind);
     }
+  });
+});
+
+describe('语系模式（family）', () => {
+  it('排除矩阵：英语史不出 i-umlaut/a-mutation/后化/短复化；罗曼史不出长复化', () => {
+    for (const fam of FAMILY_IDS) {
+      for (const r of RULES) {
+        if (ruleExcludedFor(r, fam)) {
+          // 出题池（type/freq）绝不出现被排除的规则
+          for (let i = 0; i < 120; i++) {
+            const q = genTypeQuestion('hard', fam);
+            if (q) expect(q.rule.id).not.toBe(r.id);
+            const fq = genFreqQuestion('hard', fam);
+            if (fq) expect(fq.rule.id).not.toBe(r.id);
+          }
+        }
+      }
+    }
+  });
+
+  it('档位覆盖：罗曼史无条件低化 = typical（泛语系 rare）', () => {
+    const lowerFree = RULES.find((r) => r.id === 'lower-free')!;
+    expect(ruleTierFor(lowerFree, 'generic')).toBe('rare');
+    expect(ruleTierFor(lowerFree, 'romance')).toBe('typical');
+    // 罗曼史频率题能抽到 lower-free 且答案 = typical
+    let seen = false;
+    for (let i = 0; i < 600 && !seen; i++) {
+      const q = genFreqQuestion('easy', 'romance');
+      if (q?.rule.id === 'lower-free') {
+        expect(q.answer).toBe('typical');
+        seen = true;
+      }
+    }
+    expect(seen).toBe(true);
+  });
+
+  it('音系子集：英语史词表无前圆唇 y/ø/œ；罗曼史含 jɛ/wɔ', () => {
+    const enPool = vowelPoolFor('english').map((e) => e.s);
+    expect(enPool).not.toContain('y');
+    expect(enPool).not.toContain('ø');
+    expect(enPool).not.toContain('œ');
+    const romPool = vowelPoolFor('romance').map((e) => e.s);
+    expect(romPool).toContain('jɛ');
+    expect(romPool).toContain('wɔ');
+    // 英语史生成的题目词形不含子集外元音
+    for (let i = 0; i < 100; i++) {
+      const q = genTypeQuestion('hard', 'english');
+      if (!q) continue;
+      const text = wordText(q.wordA) + wordText(q.wordB);
+      expect(text).not.toContain('y');
+      expect(text).not.toContain('ø');
+    }
+  });
+
+  it('汉语史频率题：可出题规则集合 = 高化/弱化/短高元音复化（easy 档位覆盖为 typical）', () => {
+    const ids = new Set<string>();
+    for (let i = 0; i < 400; i++) {
+      const q = genFreqQuestion('hard', 'chinese');
+      if (q) ids.add(q.rule.id);
+    }
+    expect(ids.has('raise')).toBe(true);
+    expect(ids.has('diph-short')).toBe(true);
+    expect(ids.has('reduce')).toBe(true);
+    // 排除项绝不出
+    expect(ids.has('front-umlaut')).toBe(false);
+    expect(ids.has('mono')).toBe(false);
   });
 });

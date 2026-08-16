@@ -58,7 +58,9 @@ const TTS_VOWEL_APPROX: Record<string, string> = {
   aʊ: 'ow',
   eɪ: 'ay',
   əʊ: 'oh',
-  oʊ: 'oh'
+  oʊ: 'oh',
+  jɛ: 'yeh',
+  wɔ: 'wah'
 };
 
 /** 单个元音符号（含长音 ː / 复元音）→ TTS 近似拼写；未知返回 null */

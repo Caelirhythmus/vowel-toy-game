@@ -2,6 +2,7 @@
 import { useGame } from '@/composables/useGame';
 import { useI18n } from '@/composables/useI18n';
 import { DIFFICULTY_OPTIONS, MODE_OPTIONS, TIME_OPTIONS } from '@/config/game';
+import { FAMILY_OPTIONS } from '@/config/families';
 import type { Difficulty, GameMode } from '@/core';
 
 defineProps<{ lockedHint: string }>();
@@ -27,6 +28,12 @@ const { t } = useI18n();
     <label for="time-select">{{ t('set.time') }}</label>
     <select id="time-select" :disabled="game.isRunning" :value="game.state.settings.timeSec" @change="game.setSetting('timeSec', Number(($event.target as HTMLSelectElement).value))">
       <option v-for="o in TIME_OPTIONS" :key="o.value" :value="o.value">{{ t(o.labelKey) }}</option>
+    </select>
+  </div>
+  <div class="setting" :title="lockedHint">
+    <label for="family-select">{{ t('set.family') }}</label>
+    <select id="family-select" :disabled="game.isRunning" :value="game.state.settings.family" @change="game.setSetting('family', ($event.target as HTMLSelectElement).value)">
+      <option v-for="o in FAMILY_OPTIONS" :key="o.value" :value="o.value">{{ t(o.labelKey) }}</option>
     </select>
   </div>
 </template>

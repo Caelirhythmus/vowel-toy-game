@@ -1,17 +1,22 @@
 /* ============================================================
  * core：词形（CVCV）生成与显示
+ * 语系模式：词表元音池按语系音系子集过滤（输入子集化；
+ * 规则输出允许在子集之外——音变产生新音是常态）
  * ============================================================ */
 import type { Rule, Word, WordVowel } from './types';
 import { mkVowel, vowelText } from './vowels';
 import { CONSONANTS } from '@/config/vowels';
+import { longProbFor, vowelPoolFor } from '@/config/families';
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-/** 随机 CVCV 词：{c:[c1,c2], v:[v1,v2], stress:0|1} */
-export function randomWord(): Word {
+/** 随机 CVCV 词：{c:[c1,c2], v:[v1,v2], stress:0|1}；family 决定元音子集与长短概率 */
+export function randomWord(family = 'generic'): Word {
+  const pool = vowelPoolFor(family);
+  const longProb = longProbFor(family);
   return {
     c: [pick(CONSONANTS), pick(CONSONANTS)],
-    v: [mkVowel(), mkVowel()],
+    v: [mkVowel(pool, longProb), mkVowel(pool, longProb)],
     stress: Math.random() < 0.5 ? 0 : 1
   };
 }
@@ -27,8 +32,8 @@ export function wordText(w: Word): string {
  * 注意：i-umlaut / a-mutation 是“向后同化”——目标元音必须在
  * 首音节（pos 0），触发元音（i / a）在后一音节；构词必须固定
  * 这一方向，否则会生成“前接 i / 前有 a”的反向语境 */
-export function makeWordForRule(rule: Rule): Word {
-  const word = randomWord();
+export function makeWordForRule(rule: Rule, family = 'generic'): Word {
+  const word = randomWord(family);
   const env = rule.env;
   if (!env) return word;
   const mk = (s: string, long: boolean, diph = false): WordVowel => ({ s, long, diph });
@@ -48,6 +53,10 @@ export function makeWordForRule(rule: Rule): Word {
       word.v[Math.random() < 0.5 ? 0 : 1] = mk(pick(['i', 'u', 'e', 'o']), true);
       break;
     case 'unstressed': // 随机词即可（总有非重读位）
+      break;
+    case 'stressed-open-syllable': // 意大利语复化：重读位放短中元音 ɛ/ɔ
+      word.stress = Math.random() < 0.5 ? 0 : 1;
+      word.v[word.stress] = mk(pick(['ɛ', 'ɔ']), false);
       break;
   }
   return word;

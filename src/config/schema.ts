@@ -14,13 +14,15 @@ const localized = z.object({
   en: z.string().min(1)
 });
 
+const exampleSchema = z.object({ text: z.string().min(1), srcZh: z.string().min(1), srcEn: z.string().min(1) });
+
 const ruleMetaSchema = z.object({
   id: z.string().min(1),
   type: z.enum(CHANGE_TYPE_IDS as [string, ...string[]]),
   tier: z.enum(TIER_IDS as [string, ...string[]]),
   env: z
     .object({
-      kind: z.enum(['unstressed', 'long', 'stressed-next-a', 'before-i']),
+      kind: z.enum(['unstressed', 'long', 'stressed-next-a', 'before-i', 'stressed-open-syllable']),
       labelZh: z.string().min(1),
       labelEn: z.string().min(1)
     })
@@ -30,11 +32,15 @@ const ruleMetaSchema = z.object({
   sysDesc: localized,
   /** 语系倾向说明必填：每条规则都要有“泛语系平均”之外的视角 */
   familyNote: localized,
-  /** 语系上下文频率覆盖（预留字段）：family 非空、tier 必须合法 */
+  /** 语系上下文频率覆盖：family 非空、tier 必须合法 */
   familyTiers: z
     .array(z.object({ family: z.string().min(1), tier: z.enum(TIER_IDS as [string, ...string[]]) }))
     .optional(),
-  examples: z.array(z.object({ text: z.string().min(1), srcZh: z.string().min(1), srcEn: z.string().min(1) })).min(1)
+  /** 语系排除：family id 非空 */
+  familyExcluded: z.array(z.string().min(1)).optional(),
+  /** 语系真实语料示例：family id → 合法示例列表 */
+  familyExamples: z.record(z.string().min(1), z.array(exampleSchema).min(1)).optional(),
+  examples: z.array(exampleSchema).min(1)
 });
 
 const vowelPoolSchema = z.array(

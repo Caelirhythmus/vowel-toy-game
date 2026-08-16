@@ -24,6 +24,10 @@ export function envMatches(rule: Rule, word: Word, pos: 0 | 1): boolean {
     case 'before-i':
       // i-umlaut 同理：目标元音在前音节、触发音 i 在【后一】音节
       return pos === 0 && other.s === 'i' && !other.diph;
+    case 'stressed-open-syllable':
+      // 意大利语复化：重读 + 开音节。CVCV 模型下音节恒为开音节
+      // （每个 V 后直接是下一音节首或词尾），条件退化为"重读"
+      return stressed;
     default:
       return true;
   }

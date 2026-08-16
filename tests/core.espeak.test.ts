@@ -30,6 +30,8 @@ describe('vowelMnemonic 助记符映射', () => {
     expect(vowelMnemonic({ s: 'aɪ', long: false, diph: true })).toBe('aI');
     expect(vowelMnemonic({ s: 'əʊ', long: false, diph: true })).toBe('@U');
     expect(vowelMnemonic({ s: 'oʊ', long: false, diph: true })).toBe('oU');
+    expect(vowelMnemonic({ s: 'jɛ', long: false, diph: true })).toBe('jE');
+    expect(vowelMnemonic({ s: 'wɔ', long: false, diph: true })).toBe('wO');
   });
 
   it('未知符号返回 null', () => {
